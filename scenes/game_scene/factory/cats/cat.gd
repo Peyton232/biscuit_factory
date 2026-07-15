@@ -44,6 +44,19 @@ const FUR_COLORS: Array[Color] = [
 ## uses for its own transient offset on the X axis.
 const _VISUAL_REST_Y: float = 0.05
 
+## While HELD, the sprite is pulled down from its normal standing
+## position (which draws upward from the node origin, feet at the
+## origin — see _VISUAL_REST_Y above) so the origin instead lands near
+## the cat's neck/shoulders, with the body hanging below it — reads as
+## picked up by the scruff of the neck, dangling, rather than the cat
+## just floating upright in midair. Paired with CatSelector's own
+## held_height (raised alongside this — see its doc comment) so the
+## dangling feet still clear the ground.
+const _HELD_VISUAL_Y: float = -0.6
+## Gentle pendulum sway while held, selling the "dangling" read further.
+const _HELD_SWAY_DEGREES: float = 6.0
+const _HELD_SWAY_SPEED: float = 1.3
+
 ## CarriedItem's designed pixel_size (cat.tscn) before any per-item
 ## correction from ItemVisuals.scale_for() — the same Sprite3D is reused
 ## across every item a Cat ever carries, so this can't just be left at
@@ -70,11 +83,6 @@ const _CARRIED_ITEM_HAND_HEIGHT_METERS: float = 0.9
 @export var idle_poll_interval: float = 0.4
 ## How long the cat shakes when a job or station falls through.
 @export var upset_duration: float = 0.7
-## Offset from a station building's position while stationed, so the cat
-## doesn't render exactly on top of the building sprite. Negative X/Z
-## parks the cat at the building's top-left, screen-wise (camera never
-## yaws, so world -X/-Z consistently reads as screen left/up).
-@export var station_offset: Vector3 = Vector3(-0.8, 0.0, -0.8)
 ## How long a station must have nothing to do before a stationed cat
 ## looks for a different one to wander to.
 @export var station_wander_delay: float = 3.0
@@ -110,6 +118,7 @@ var _upset_timer: float = 0.0
 var _station_idle_timer: float = 0.0
 var _anim_timer: float = 0.0
 var _station_bounce_timer: float = 0.0
+var _held_sway_timer: float = 0.0
 ## World position the cat last had actual work finish at; wander targets
 ## are picked near this, not near wherever the previous wander leg ended,
 ## so repeated wandering can't cumulatively drift the cat far away.
@@ -188,6 +197,7 @@ func _process(delta: float) -> void:
 			_tend_wander(delta)
 	_update_walk_animation(delta)
 	_update_station_bounce(delta)
+	_update_held_visual(delta)
 	_update_lifetime_timers(delta)
 
 
@@ -239,6 +249,23 @@ func _update_station_bounce(delta: float) -> void:
 	_station_bounce_timer += delta
 	var lift: float = (sin(_station_bounce_timer * station_bounce_speed * TAU) + 1.0) * 0.5
 	_visual.position.y = _VISUAL_REST_Y + lift * station_bounce_height
+
+
+## While HELD, pulls the sprite down (see _HELD_VISUAL_Y) so it reads as
+## dangling from the grab point rather than standing upright in midair,
+## plus a gentle pendulum sway. Runs after _update_station_bounce() so it
+## always wins while HELD (that function unconditionally resets
+## _visual.position.y to rest whenever not STATIONED). Resets both back
+## to neutral the instant HELD ends, same "offset while active, snap back
+## when not" idiom _shake()/_update_station_bounce() already use.
+func _update_held_visual(delta: float) -> void:
+	if _state != State.HELD:
+		_held_sway_timer = 0.0
+		_visual.rotation.z = 0.0
+		return
+	_held_sway_timer += delta
+	_visual.position.y = _HELD_VISUAL_Y
+	_visual.rotation.z = deg_to_rad(sin(_held_sway_timer * _HELD_SWAY_SPEED) * _HELD_SWAY_DEGREES)
 
 
 ## Tints the sprite to one of FUR_COLORS. Index is clamped/wrapped so
@@ -485,7 +512,7 @@ func _arrive_at_station() -> void:
 	if _station == null or _station.station_cat != self:
 		_become_upset()
 		return
-	position = _station.position + station_offset
+	position = _station.position + _station.station_offset
 	_visual.flip_h = true
 	_station.cat_arrived = true
 	_station_idle_timer = 0.0
@@ -573,9 +600,9 @@ func _begin_path_to(building: Building) -> void:
 
 
 ## Same as _begin_path_to(), but for TO_STATION specifically: appends the
-## exact parked spot (station.position + station_offset) as one more
-## waypoint past the building-approach leg, so the cat walks all the way
-## there instead of stopping near the building's center and having
+## exact parked spot (station.position + station.station_offset) as one
+## more waypoint past the building-approach leg, so the cat walks all the
+## way there instead of stopping near the building's center and having
 ## _arrive_at_station() teleport it the rest of the way. That teleport
 ## could be over a meter (station_offset's own length, up to
 ## interaction_distance more slack on top) in whatever direction the cat
@@ -585,7 +612,7 @@ func _begin_path_to(building: Building) -> void:
 ## now just as a sub-tolerance correction rather than a real jump.
 func _begin_path_to_station(station: ProcessingBuilding) -> void:
 	_begin_path_to(station)
-	_path.append(station.position + station_offset)
+	_path.append(station.position + station.station_offset)
 
 
 ## Walks the cached path leg by leg; true once the final waypoint

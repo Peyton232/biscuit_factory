@@ -1,176 +1,61 @@
-# Godot Game Template
-For Godot 4.6 (4.3+ compatible)
+# Biscuit Factory
 
-> [!NOTE]  
-> Using the latest version of Godot is recommended.   
-> See [Main Menu Setup](/addons/maaacks_game_template/docs/MainMenuSetup.md) for use with versions < 4.6.  
+![Biscuit Factory](assets/title.png)
 
-This template has a main menu, options menus, pause menu, credits, scene loader, extra tools, and an example game scene.  
+A cozy factory-automation game about running a bakery staffed entirely by
+adorable cats. **The cats are the automation** — there are no conveyor
+belts. Delivery Cats carry ingredients and finished goods between
+buildings, and station cats operate the mixers, ovens, and other
+equipment. Your job is to lay out the factory, assign roles, and keep
+everyone fed and working efficiently.
 
-[Example on itch.io](https://maaack.itch.io/godot-game-template)  
+No enemies, no time pressure, no fail state — just a growing bakery, a
+growing crew of cats, and the satisfaction of a well-organized floor
+plan.
 
-[Featured Games](#featured-games)  
+## Gameplay
 
-### Videos
+Place stations → cats staff and supply them → watch cats work → sell
+desserts → earn money → expand the factory → optimize the layout
+(shorter walks, fewer bottlenecks) → unlock better recipes.
 
-[![Quick Intro Video](https://img.youtube.com/vi/U9CB3vKINVw/hqdefault.jpg)](https://youtu.be/U9CB3vKINVw)  
-[More Videos](/addons/maaacks_game_template/docs/Videos.md)
+- **Grid-based building placement** across an expandable factory floor
+- **Delivery Cats** that automatically haul ingredients and goods
+  between buildings, prioritizing nearby and long-starved jobs
+- **Station Cats** (Mixer / Oven / Cutter / Assembler) that staff and
+  run processing buildings
+- A full **recipe and tier-progression system**, from a single Whipped
+  Cream recipe up through a multi-station dessert lineup
+- Adopt, name, and reassign cats; pick them up and move them anywhere
+- A cinematic ending sequence with a bakery report, employee awards, and
+  rolling credits over your still-running factory
 
-### Screenshots
-![Main Menu](/addons/maaacks_game_template/media/screenshot-6-main-menu-5.png)  
-![Key Rebinding](/addons/maaacks_game_template/media/screenshot-6-input-list-8.png)  
-![Audio Controls](/addons/maaacks_game_template/media/screenshot-6-audio-options-2.png)  
-![Video Controls](/addons/maaacks_game_template/media/screenshot-6-video-options-5.png)  
-![Pause Menu](/addons/maaacks_game_template/media/screenshot-6-pause-menu-3.png)  
-[More Screenshots](/addons/maaacks_game_template/docs/Screenshots.md)  
+## Built with
 
-## Objective
+[Godot 4.7](https://godotengine.org), built on top of
+[Maaack's Godot Game Template](https://github.com/Maaack/Godot-Game-Template)
+for menus, settings, and save-slot infrastructure. See
+[ATTRIBUTION.md](ATTRIBUTION.md) for the full credits and asset licenses.
 
-Setup menus and accessibility features in about 15 minutes.
+## Development docs
 
-The template can be the start of a new project, or plug into an existing one. It is game agnostic (2D or 3D) and can work with multiple target resolutions, up to 4k and down to 640x360. It's meant to cover the needs for a typical game jam, while remaining scalable and extensible enough to support commercial games.
+The `.context/` folder holds this project's living design and
+architecture docs (vision, gameplay systems, progression tuning,
+architecture notes, and a dated decision log) — the source of truth for
+how and why the game is built the way it is.
 
-## Features
+## License
 
-### Base
+This project's original code and assets are **all rights reserved**
+unless noted otherwise. Third-party components (the Godot Game Template
+and other bundled assets) keep their own licenses — see
+[ATTRIBUTION.md](ATTRIBUTION.md).
 
-The `base/` folder holds the core components of the menus application.
+## Credits
 
--   Main Menu    
--   Options Menus
--   Pause Menu
--   Credits
--   Loading Screen
--   Opening Scene
--   Persistent Settings
--   Simple Config Interface
--   Extensible Overlay Menus
--   Keyboard/Mouse Support
--   Gamepad Support
--   UI Sound Controller
--   Background Music Controller
--   Credits Reader (Markdown File Parser)
--   Global State Management (Basic Saving/Loading)
--   Global Config Autoload
+**Made by**
+- Peyton Thibodeaux — Game Programming, Music
+- Lauren Thibodeaux — Art, Animation
 
-### Extras
-
-The `extras/` folder holds components that extend the core application.
-
--   Level Loaders
--   Level Progress Manager
--   Win / Lose Manager
--   Script for Releasing on [itch.io](https://itch.io/) with [butler](https://itch.io/docs/butler/)
- 
-### Examples 
-
-The `examples/` folder contains an example project using inherited scenes from the `base/` and `extras/`.
-
--   Game Scene
--   Level Class & 3 Levels
--   Tutorial Windows & 3 Tutorial Messages
--   Win & Lose Windows
--   Master Options Menu
--   End Credits
--   Main Menu w/ Animations
--   Opening w/ Godot Logo
--   Game and Level State Management
-
-### Minimal
-
-Users that want a minimal set of features can try [Maaack's Minimal Game Template](https://github.com/Maaack/Godot-Minimal-Game-Template) or other options from the [plugin suite](/addons/maaacks_game_template/docs/PluginSuite.md).  
-
-
-## Installation
-
-### Godot Asset Library
-This package is available as both a template and a plugin, meaning it can be used to start a new project, or added to an existing project. 
-
-![Package Icon](/addons/maaacks_game_template/media/game-icon-black-transparent-256x256.png)  
-
-When starting a new project:
-
-1.  Go to the `Asset Library Projects` tab.
-2.  Search for "Maaack's Game Template".
-3.  Click on the result to open the template details.
-4.  Click to Download.
-5.  Give the project a new name and destination.
-6.  Click to Install & Edit.
-7.  Continue with the [Basic Setup](/addons/maaacks_game_template/docs/BasicSetup.md)
-
-When editing an existing project:
-
-1.  Go to the `AssetLib` tab.
-2.  Search for "Maaack's Game Template Plugin".
-3.  Click on the result to open the plugin details.
-4.  Click to Download.
-5.  Check that contents are getting installed to `addons/` and there are no conflicts.
-6.  Click to Install.
-7.  Reload the project (you may see errors before you do this).
-8.  Enable the plugin from the Project Settings > Plugins tab.  
-	1.  If it's enabled for the first time, the setup wizard will start.  
-    2.  Close the window behind it and complete the setup wizard.  
-9.  Continue with the [Basic Setup](/addons/maaacks_game_template/docs/BasicSetup.md)
-
-
-### GitHub
-
-
-1.  Download the latest release version from [GitHub](https://github.com/Maaack/Godot-Game-Template/releases/latest).  
-2.  Extract the contents of the archive.
-3.  Move the `addons/maaacks_game_template` folder into your project's `addons/` folder.  
-4.  Open/Reload the project.  
-5.  Enable the plugin from the Project Settings > Plugins tab.  
-	1.  If it's enabled for the first time, the setup wizard will start.  
-    2.  Close the window behind it and complete the setup wizard.  
-6.  Continue with the [Basic Setup](/addons/maaacks_game_template/docs/BasicSetup.md)
-
-
-## Usage
-
-[Basic Setup](/addons/maaacks_game_template/docs/BasicSetup.md) is done through the _Setup Wizard_ at `Project > Tools > Run Maaack's Game Template Setup...`.
-
-As part of setup, example scenes are copied out of `/addons/` into a desired folder (project root by default). These can be edited to fit requirements.
-   
-### More Documentation
-
-[Main Menu Setup](/addons/maaacks_game_template/docs/MainMenuSetup.md)  
-[Options Menu Setup](/addons/maaacks_game_template/docs/OptionsMenuSetup.md)  
-[Game Scene Setup](/addons/maaacks_game_template/docs/GameSceneSetup.md)  
-[Updating Credits](/addons/maaacks_game_template/docs/UpdatingCredits.md)  
-[Blending Music](/addons/maaacks_game_template/docs/BlendingMusic.md)  
-[Adding UI Sound Effects](/addons/maaacks_game_template/docs/AddingUISFX.md)  
-[Loading Scenes](/addons/maaacks_game_template/docs/LoadingScenes.md)  
-[Input Icon Mapping](/addons/maaacks_game_template/docs/InputIconMapping.md)  
-[Joypad Inputs](/addons/maaacks_game_template/docs/JoypadInputs.md)  
-[Game Saving](/addons/maaacks_game_template/docs/GameSaving.md)  
-[How Parts Work](/addons/maaacks_game_template/docs/HowPartsWork.md)  
-[Moving Files](/addons/maaacks_game_template/docs/MovingFiles.md)  
-[Uploading to itch.io](/addons/maaacks_game_template/docs/UploadingToItchIo.md)  
-[Build and Publish Your Game Using CICD](/addons/maaacks_game_template/docs/BuildAndPublish.md)  
-[Automatic Updating](/addons/maaacks_game_template/docs/AutomaticUpdating.md)  
-[Exhibiting Your Game](/addons/maaacks_game_template/docs/Exhibiting.md)  
-
----
-
-## Featured Games
-
-| HeartFix Express | Baking Godium | Rent Seek Kill |  
-| :-------:| :-------: | :-------: |
-| ![HeartFix Express](/addons/maaacks_game_template/media/thumbnail-game-heartfix-express.png) | ![Baking Godium](/addons/maaacks_game_template/media/thumbnail-game-baking-godium.png) | ![Rent-Seek-Kill](/addons/maaacks_game_template/media/thumbnail-game-rent-seek-kill.png) |
-|  [Find on Steam](https://store.steampowered.com/app/3983290/HeartFix_Express_Demo/)  | [Play on itch.io](https://maaack.itch.io/baking-godium) | [Play on itch.io](https://xandruher.itch.io/rent-seek-kill)  |
-
-
-[All Shared Games](/addons/maaacks_game_template/docs/GamesMade.md)  
-
-
-## Community
-
-Join the [Discord server](https://discord.gg/AyZrJh5AMp ) and share your work with others. It's also a space for getting or giving feedback, and asking for help. 
- 
-
-## Links
-[Attribution](/addons/maaacks_game_template/ATTRIBUTION.md)  
-[License](/addons/maaacks_game_template/LICENSE.txt)  
-[Godot Asset Library - Template](https://godotengine.org/asset-library/asset/2703)  
-[Godot Asset Library - Plugin](https://godotengine.org/asset-library/asset/2709)  
+Full credits, including the Godot Game Template and other third-party
+assets, are in [ATTRIBUTION.md](ATTRIBUTION.md).

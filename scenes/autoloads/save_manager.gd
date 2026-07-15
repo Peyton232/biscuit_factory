@@ -52,6 +52,17 @@ func slot_exists(slot: int) -> bool:
 	return FileAccess.file_exists(slot_path(slot))
 
 
+## Permanently deletes a slot's save file — used by SaveSlotMenu's
+## per-slot delete button. A no-op on an already-empty slot. Deliberately
+## doesn't touch current_slot/_pending_save_data — deleting a slot from
+## the picker UI happens before any game session is active, so there's
+## nothing session-side to clear.
+func delete_slot(slot: int) -> void:
+	if not slot_exists(slot):
+		return
+	DirAccess.remove_absolute(slot_path(slot))
+
+
 ## Loads and returns a slot's save data without consuming or clearing
 ## anything — used by the slot-picker UI to preview money/tier/last-
 ## saved time before the player commits to a choice. Null if the slot

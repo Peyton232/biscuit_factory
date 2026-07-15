@@ -38,6 +38,15 @@ signal job_cancelled(job: DeliveryJob)
 ## nudge on top of the primary distance signal, not a replacement for it.
 @export var cat_proximity_weight: float = 0.3
 
+## Mirrors buildings_root's Building children, incrementally maintained by
+## _on_building_entered()/_on_building_exiting() instead of rebuilt from
+## get_children() on every buildings() call (✅ 2026-07-15) — with a
+## large, active factory, buildings() was being called from BOTH
+## _dispatch() (itself firing on nearly every inventory change, see
+## _watch_building()) and every non-DELIVERY cat's idle poll every
+## idle_poll_interval seconds, so a get_children() + type-check rebuild
+## on every single one of those calls added up fast. See decisions.md.
+var _buildings_cache: Array[Building] = []
 var _jobs: Array[DeliveryJob] = []
 var _dispatch_timer: float = 0.0
 ## Running clock, seconds — accumulated every _process(), not wall time
@@ -64,8 +73,11 @@ func _ready() -> void:
 	# _watch_building() below for why this matters on top of the
 	# periodic scan.
 	buildings_root.child_entered_tree.connect(_on_building_entered)
-	for building: Building in buildings():
-		_watch_building(building)
+	for child: Node in buildings_root.get_children():
+		var building: Building = child as Building
+		if building != null:
+			_buildings_cache.append(building)
+			_watch_building(building)
 
 
 ## Cancels every job that still depends on a building being removed:
@@ -83,11 +95,13 @@ func _on_building_exiting(node: Node) -> void:
 				and job.status != DeliveryJob.Status.COMPLETED
 		if pickup_pending or destination_pending:
 			cancel_job(job)
+	_buildings_cache.erase(building)
 
 
 func _on_building_entered(node: Node) -> void:
 	var building: Building = node as Building
 	if building != null:
+		_buildings_cache.append(building)
 		_watch_building(building)
 
 
@@ -151,19 +165,39 @@ func _process(delta: float) -> void:
 ## gameplay_overview.md/roadmap.md — deliberately not attempted yet, a
 ## bigger change than either addition here).
 func _dispatch() -> void:
-	var all_buildings: Array[Building] = buildings()
+	var all_buildings: Array[Building] = _buildings_cache
+	# Item -> buildings currently holding at least one unclaimed unit of
+	# it, built once per pass (✅ 2026-07-15) instead of the previous
+	# plain O(buildings²) scan (every destination × every pickup,
+	# regardless of whether that pickup could ever supply the item in
+	# question). Most buildings only ever produce one or two item types,
+	# so indexing by item and only visiting the pickups that actually
+	# carry each destination's needed item cuts the candidate search down
+	# a lot on a large, active factory — see decisions.md.
+	var pickups_by_item: Dictionary[StringName, Array] = {}
+	for pickup: Building in all_buildings:
+		for item: StringName in pickup.current_outputs():
+			if pickup.output_inventory.available_for_pickup(item) < 1:
+				continue
+			if not pickups_by_item.has(item):
+				pickups_by_item[item] = []
+			pickups_by_item[item].append(pickup)
+	# Computed once per pass rather than re-scanning cats_root for every
+	# candidate (✅ 2026-07-15) — see _nearest_idle_delivery_cat_distance().
+	var idle_cat_positions: Array[Vector3] = _idle_delivery_cat_positions()
+
 	var candidates: Array[Dictionary] = []
 	for destination: Building in all_buildings:
 		for item: StringName in destination.current_inputs():
 			if not destination.wants_item(item):
 				continue
-			for pickup: Building in all_buildings:
-				if pickup == destination or pickup.output_inventory.available_for_pickup(item) < 1:
+			for pickup: Building in pickups_by_item.get(item, []):
+				if pickup == destination:
 					continue
 				var dist: float = pickup.position.distance_to(destination.position)
 				var score: float = dist \
 						- _starvation_bonus_meters(destination, item) \
-						+ _nearest_idle_delivery_cat_distance(pickup) * cat_proximity_weight
+						+ _nearest_idle_delivery_cat_distance(pickup, idle_cat_positions) * cat_proximity_weight
 				candidates.append({
 					"pickup": pickup,
 					"destination": destination,
@@ -202,21 +236,33 @@ func _starvation_bonus_meters(destination: Building, item: StringName) -> float:
 	return minf(waited_seconds * starvation_meters_per_second, max_starvation_bonus_meters)
 
 
-## Distance from `pickup` to the nearest currently-idle DELIVERY cat, or
-## 0.0 (neutral — contributes nothing either way) when there's no cat to
-## compare against, since cats_root is optional wiring and every cat
-## might already be busy. A missing/empty cats_root is the same
-## "optional wiring point, null just means unused" convention this
-## codebase uses elsewhere (tier_manager, recipe_shop, etc.).
-func _nearest_idle_delivery_cat_distance(pickup: Building) -> float:
+## Positions of every currently-idle DELIVERY cat, scanned once per
+## _dispatch() pass (✅ 2026-07-15) — this used to be re-scanned by
+## _nearest_idle_delivery_cat_distance() for EVERY candidate, so a busy
+## factory with many candidates and many cats paid for cats_root's
+## get_children() + role/idle filtering over and over for the exact same
+## answer each time. Empty (not null-returning) when cats_root is unset,
+## matching this codebase's "optional wiring, null/empty just means
+## unused" convention elsewhere (tier_manager, recipe_shop, etc.).
+func _idle_delivery_cat_positions() -> Array[Vector3]:
+	var positions: Array[Vector3] = []
 	if cats_root == null:
-		return 0.0
-	var nearest: float = INF
+		return positions
 	for child: Node in cats_root.get_children():
 		var cat: Cat = child as Cat
 		if cat == null or cat.role != Cat.Role.DELIVERY or not cat.is_idle():
 			continue
-		nearest = minf(nearest, cat.position.distance_to(pickup.position))
+		positions.append(cat.position)
+	return positions
+
+
+## Distance from `pickup` to the nearest position in idle_cat_positions
+## (see _idle_delivery_cat_positions()), or 0.0 (neutral — contributes
+## nothing either way) when the list is empty.
+func _nearest_idle_delivery_cat_distance(pickup: Building, idle_cat_positions: Array[Vector3]) -> float:
+	var nearest: float = INF
+	for cat_position: Vector3 in idle_cat_positions:
+		nearest = minf(nearest, cat_position.distance_to(pickup.position))
 	return nearest if nearest != INF else 0.0
 
 
@@ -263,11 +309,14 @@ func cancel_job(job: DeliveryJob) -> void:
 	job_cancelled.emit(job)
 
 
-## All placed buildings, for future dispatch scans.
+## All placed buildings. Returns a copy of the incrementally-maintained
+## _buildings_cache (✅ 2026-07-15) rather than rebuilding one from
+## buildings_root.get_children() on every call — this is polled by every
+## non-DELIVERY cat's idle station search (Cat._find_nearest_unstaffed_
+## station()) roughly every idle_poll_interval seconds, on top of every
+## _dispatch() pass, so the rebuild cost added up fast with many cats and
+## buildings. A copy, not the live cache itself, so a caller can't
+## accidentally corrupt DeliveryManager's own bookkeeping by mutating what
+## it gets back.
 func buildings() -> Array[Building]:
-	var result: Array[Building] = []
-	for child: Node in buildings_root.get_children():
-		var building: Building = child as Building
-		if building != null:
-			result.append(building)
-	return result
+	return _buildings_cache.duplicate()

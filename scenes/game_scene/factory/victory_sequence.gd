@@ -20,6 +20,10 @@ extends Node
 @export var lifetime_stats: LifetimeStats
 @export var recipe_shop: RecipeShop
 @export var tier_manager: TierManager
+## Read once, in _compute_pan_waypoints(), to frame the cinematic pan on
+## where the player actually built rather than the full unlocked
+## rectangle — see that function's own doc comment.
+@export var buildings_root: Node3D
 ## Live cats at the moment the sequence plays — read once, right before
 ## showing the Employee Awards, to compute EmployeeAwards.compute()'s
 ## winners from each cat's actual lifetime stats. See its own class doc.
@@ -77,6 +81,10 @@ const _WAYPOINT_FRACTIONS: Array[Vector2] = [
 ## How much of the factory's own footprint to keep in view at once, as a
 ## multiple of its longer side — >1 leaves corners uncropped.
 const _ZOOM_FOOTPRINT_FACTOR: float = 0.6
+## Padding added around the placed-buildings bounding box (see
+## _built_area_bounds()) so buildings sitting right at the edge of that
+## box aren't cropped by the pan/zoom framing.
+const _BUILT_AREA_PADDING_METERS: float = 8.0
 
 @onready var _overlay: CanvasLayer = $Overlay
 @onready var _transition_fade: ColorRect = $Overlay/TransitionFade
@@ -179,17 +187,57 @@ func _fade(node: CanvasItem, from_alpha: float, to_alpha: float) -> void:
 	await tween.finished
 
 
-## Snapshot of the current unlocked factory footprint, taken once per
-## play() — bounds could in principle expand mid-sequence, but
-## re-deriving waypoints mid-pan for that edge case isn't worth it for a
-## one-time victory lap.
+## Snapshot of the current built-area footprint, taken once per play() —
+## bounds could in principle expand mid-sequence, but re-deriving
+## waypoints mid-pan for that edge case isn't worth it for a one-time
+## victory lap.
+##
+## **Frames on the placed-buildings bounding box, not the full unlocked
+## rectangle (✅ 2026-07-15)** — the pan/zoom used to always sweep all four
+## quadrants of factory_bounds.unlocked_world_size(), which on a factory
+## where the player expanded well past their actual built footprint (a
+## very normal way to play — expansion is cheap insurance, not a promise
+## to fill every cell) spent much of the cinematic panning over bare
+## grass. `_built_area_bounds()` falls back to the full unlocked
+## rectangle only if there happen to be no buildings at all (shouldn't
+## normally be reachable at Tier Winner, but avoids a zero-size pan).
 func _compute_pan_waypoints() -> void:
-	var corner: Vector3 = factory_bounds.unlocked_world_corner()
-	var size: Vector2 = factory_bounds.unlocked_world_size()
+	var corner: Vector3
+	var size: Vector2
+	var built_rect: Rect2 = _built_area_bounds()
+	if built_rect.size.x > 0.0 and built_rect.size.y > 0.0:
+		corner = Vector3(built_rect.position.x, 0.0, built_rect.position.y)
+		size = built_rect.size
+	else:
+		corner = factory_bounds.unlocked_world_corner()
+		size = factory_bounds.unlocked_world_size()
 	_pan_waypoints.clear()
 	for fraction: Vector2 in _WAYPOINT_FRACTIONS:
 		_pan_waypoints.append(corner + Vector3(size.x * fraction.x, 0.0, size.y * fraction.y))
 	_pan_zoom = clampf(maxf(size.x, size.y) * _ZOOM_FOOTPRINT_FACTOR, camera_rig.min_zoom, camera_rig.max_zoom)
+
+
+## World X/Z bounding rectangle of every placed building, padded by
+## _BUILT_AREA_PADDING_METERS — empty (zero size) if buildings_root isn't
+## wired or has no Building children yet.
+func _built_area_bounds() -> Rect2:
+	var rect := Rect2()
+	if buildings_root == null:
+		return rect
+	var first: bool = true
+	for child: Node in buildings_root.get_children():
+		var building: Building = child as Building
+		if building == null:
+			continue
+		var point := Vector2(building.position.x, building.position.z)
+		if first:
+			rect = Rect2(point, Vector2.ZERO)
+			first = false
+		else:
+			rect = rect.expand(point)
+	if not first:
+		rect = rect.grow(_BUILT_AREA_PADDING_METERS)
+	return rect
 
 
 ## First match wins — see the rank constants' doc comment above for why

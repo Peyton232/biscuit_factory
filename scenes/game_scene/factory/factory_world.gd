@@ -172,6 +172,13 @@ func _run_game_complete_sequence() -> void:
 	dialog.show_message_no_button("Congratulations!")
 	Sfx.spawn(self, _ENDING_SOUND)
 	await get_tree().create_timer(_CONGRATULATIONS_DISPLAY_SECONDS).timeout
+	# VictorySequence only hides/shows factory_hud as a whole (a CanvasLayer)
+	# around its own cinematic — it has no idea this dialog exists, so
+	# without explicitly hiding it here, it stays internally visible=true
+	# and pops right back into view the instant factory_hud.show() restores
+	# the HUD at the end of the sequence. Reported as "the congratulations
+	# textbox does not go away." See decisions.md.
+	dialog.hide()
 
 	if victory_sequence != null:
 		await victory_sequence.play()

@@ -27,6 +27,10 @@ extends Node
 
 ## Emitted when the selected cat changes; null when deselected.
 signal selection_changed(cat: Cat)
+## Emitted when a cat is picked up or dropped; null once dropped. Lets
+## FactoryHud swap in a pinch cursor for exactly as long as a cat is
+## actually being carried, mirroring BuildingMover.moving_changed.
+signal held_changed(cat: Cat)
 
 @export var grid_cursor: GridCursor
 @export var placer: BuildingPlacer
@@ -40,8 +44,13 @@ signal selection_changed(cat: Cat)
 ## small, since a parked cat is a fixed target, not one the player needs
 ## help clicking; keeps the building underneath it clickable too.
 @export var stationed_pick_radius: float = 0.5
-## Height a held cat floats at, so it visibly separates from the floor.
-@export var held_height: float = 0.6
+## Height a held cat's origin floats at, so it visibly separates from the
+## floor. Raised from the old 0.6 (✅ 2026-07-15, paired with Cat's own
+## _HELD_VISUAL_Y) — the cat's sprite now hangs *below* this point rather
+## than standing on it (reading as held by the scruff of the neck,
+## dangling), so the anchor needs to sit higher for the dangling feet to
+## still clear the ground.
+@export var held_height: float = 1.1
 
 var _selected: Cat = null
 var _held: Cat = null
@@ -83,10 +92,17 @@ func _on_cancel() -> void:
 		# normalizes the Y back to ground level.
 		_held.end_held(_held.position)
 		_held = null
+		held_changed.emit(null)
 		get_viewport().set_input_as_handled()
 	elif _selected != null:
 		_deselect()
 		get_viewport().set_input_as_handled()
+
+
+## Whether a cat is currently being carried — FactoryHud reads this to
+## decide when to show the pinch cursor.
+func is_holding() -> bool:
+	return _held != null
 
 
 ## Called by the cat inspector panel's "Pick Up" button.
@@ -96,6 +112,7 @@ func begin_hold() -> void:
 	_held = _selected
 	_held.begin_held()
 	_deselect()
+	held_changed.emit(_held)
 
 
 func _select(cat: Cat) -> void:
@@ -115,6 +132,7 @@ func _drop_held_cat() -> void:
 		return
 	_held.end_held(grid_cursor.world_point)
 	_held = null
+	held_changed.emit(null)
 
 
 ## The cat a click would select right now, or null — same targeting

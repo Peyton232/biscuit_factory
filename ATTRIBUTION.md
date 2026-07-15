@@ -16,4 +16,4 @@ Saber
 ![Maaack Plugin Icon](/assets/plugin_logo/logo.png)  
 Author: [Marek Belski and contributors](https://github.com/Maaack/Godot-Game-Template/graphs/contributors)  
 Source: [github: Godot-Game-Template](https://github.com/Maaack/Godot-Game-Template)  
-License: [MIT License](LICENSE.txt)  
+License: [MIT License](addons/maaacks_game_template/LICENSE.txt)  

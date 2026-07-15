@@ -338,7 +338,7 @@ economy = NodePath("../Economy")
 recipe_shop = NodePath("../RecipeShop")
 tier_manager = NodePath("../TierManager")
 
-[node name="VictorySequence" parent="." unique_id=2100000010 node_paths=PackedStringArray("camera_rig", "factory_hud", "factory_bounds", "lifetime_stats", "recipe_shop", "tier_manager", "cats_root") instance=ExtResource("106_victory")]
+[node name="VictorySequence" parent="." unique_id=2100000010 node_paths=PackedStringArray("camera_rig", "factory_hud", "factory_bounds", "lifetime_stats", "recipe_shop", "tier_manager", "cats_root", "buildings_root") instance=ExtResource("106_victory")]
 camera_rig = NodePath("../CameraRig")
 factory_hud = NodePath("../FactoryHud")
 factory_bounds = NodePath("../FactoryBounds")
@@ -346,6 +346,7 @@ lifetime_stats = NodePath("../LifetimeStats")
 recipe_shop = NodePath("../RecipeShop")
 tier_manager = NodePath("../TierManager")
 cats_root = NodePath("../Cats")
+buildings_root = NodePath("../Buildings")
 
 [node name="OpeningSequence" parent="." unique_id=2100000011 node_paths=PackedStringArray("camera_rig", "factory_hud", "cats_root", "tutorial_overlay") instance=ExtResource("107_opening")]
 camera_rig = NodePath("../CameraRig")

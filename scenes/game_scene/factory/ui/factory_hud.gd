@@ -85,6 +85,16 @@ extends CanvasLayer
 const _BUILD_ICON: Texture2D = preload("res://assets/UI/buildicon.jpeg")
 const _RECIPES_ICON: Texture2D = preload("res://assets/UI/recipeicon.jpeg")
 const _DEMOLISH_ICON: Texture2D = preload("res://assets/UI/demolishicon.jpeg")
+## Swapped in globally (Input.set_custom_mouse_cursor) while the player is
+## actively carrying a cat or relocating a building — see _update_cursor().
+## _CURSOR_NORMAL/_CURSOR_NORMAL_HOTSPOT duplicate project.godot's own
+## mouse_cursor/custom_image(_hotspot) values, since reverting away from a
+## custom cursor requires re-setting the original one explicitly (passing
+## null clears back to the bare OS pointer, not to the project's default).
+const _CURSOR_NORMAL: Texture2D = preload("res://assets/UI/cursor.png")
+const _CURSOR_NORMAL_HOTSPOT := Vector2(2, 0)
+const _CURSOR_PINCH: Texture2D = preload("res://assets/UI/cursor pinch.png")
+const _CURSOR_PINCH_HOTSPOT := Vector2(22, 8)
 ## Pause/Settings top-right icon buttons — PNG, not JPEG (real alpha
 ## backgrounds, unlike the square opaque bottom-bar icons above), built
 ## the same way via _make_icon_button() (see _populate_top_right()).
@@ -159,6 +169,7 @@ func _ready() -> void:
 	economy.money_changed.connect(_on_money_changed)
 	placer.tool_changed.connect(_on_tool_changed)
 	cat_selector.selection_changed.connect(_on_cat_selection_changed)
+	cat_selector.held_changed.connect(_on_cat_held_changed)
 	building_selector.selection_changed.connect(_on_building_selection_changed)
 	cat_shop.cost_changed.connect(_on_cat_shop_cost_changed)
 	_cat_panel.name_changed.connect(_on_cat_name_changed)
@@ -479,6 +490,24 @@ func _on_building_move_pressed(building: Building) -> void:
 
 func _on_building_moving_changed() -> void:
 	_refresh_tool_label()
+	_update_cursor()
+
+
+func _on_cat_held_changed(_cat: Cat) -> void:
+	_update_cursor()
+
+
+## Pinch cursor while the player is actively carrying a cat or relocating
+## a building — both are a "you're holding something, click to place it"
+## interaction, so they share one cursor rather than each needing its own
+## visual language.
+func _update_cursor() -> void:
+	var pinching: bool = cat_selector.is_holding() \
+			or (building_mover != null and building_mover.is_moving())
+	if pinching:
+		Input.set_custom_mouse_cursor(_CURSOR_PINCH, Input.CURSOR_ARROW, _CURSOR_PINCH_HOTSPOT)
+	else:
+		Input.set_custom_mouse_cursor(_CURSOR_NORMAL, Input.CURSOR_ARROW, _CURSOR_NORMAL_HOTSPOT)
 
 
 func _refresh_tool_label() -> void:

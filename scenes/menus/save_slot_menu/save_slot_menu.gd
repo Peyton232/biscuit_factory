@@ -20,11 +20,15 @@ const _SLOT_COUNT: int = 3
 var mode: Mode = Mode.NEW_GAME
 
 @onready var _slot_buttons: Array[Button] = [%Slot1Button, %Slot2Button, %Slot3Button]
+@onready var _delete_buttons: Array[Button] = [%Slot1DeleteButton, %Slot2DeleteButton, %Slot3DeleteButton]
 @onready var _overwrite_confirmation: ConfirmationOverlaidWindow = %OverwriteConfirmation
+@onready var _delete_confirmation: ConfirmationOverlaidWindow = %DeleteConfirmation
 
 ## Set right before showing the overwrite confirmation, so its
 ## "confirmed" handler knows which slot to actually commit to.
 var _pending_overwrite_slot: int = -1
+## Same idea as _pending_overwrite_slot, for the delete confirmation.
+var _pending_delete_slot: int = -1
 
 
 func _ready() -> void:
@@ -46,6 +50,8 @@ func _refresh() -> void:
 			_slot_buttons[i].disabled = data == null
 		else:
 			_slot_buttons[i].disabled = false
+		# Nothing to delete on an already-empty slot, in either mode.
+		_delete_buttons[i].visible = data != null
 
 
 func _slot_label(slot: int, data: FactorySaveData) -> String:
@@ -80,6 +86,21 @@ func _on_slot_button_pressed(slot: int) -> void:
 func _on_overwrite_confirmed() -> void:
 	SaveManager.begin_new_game(_pending_overwrite_slot)
 	slot_chosen.emit(_pending_overwrite_slot)
+
+
+## The delete "✕" sits on top of the slot's own big pick button (see
+## save_slot_menu.tscn) — Godot delivers a click to that topmost child
+## first, so this fires instead of _on_slot_button_pressed for the same
+## click, not in addition to it.
+func _on_delete_button_pressed(slot: int) -> void:
+	_pending_delete_slot = slot
+	_delete_confirmation.show()
+
+
+func _on_delete_confirmed() -> void:
+	SaveManager.delete_slot(_pending_delete_slot)
+	_pending_delete_slot = -1
+	_refresh()
 
 
 func _on_back_button_pressed() -> void:

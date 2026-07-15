@@ -57,6 +57,25 @@ theme_override_styles/disabled = ExtResource("3_cardnormal")
 text = "Slot 1
 Empty"
 
+[node name="Slot1DeleteButton" type="Button" parent="CenterContainer/Layout/Slot1Button"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -32.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = 32.0
+grow_horizontal = 0
+mouse_filter = 0
+flat = true
+theme_override_colors/font_color = Color(0.75, 0.2, 0.2, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.3, 0.3, 1)
+theme_override_colors/font_pressed_color = Color(0.55, 0.1, 0.1, 1)
+theme_override_font_sizes/font_size = 20
+text = "✕"
+
 [node name="Slot2Button" type="Button" parent="CenterContainer/Layout"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(400, 160)
@@ -76,6 +95,25 @@ theme_override_styles/disabled = ExtResource("3_cardnormal")
 text = "Slot 2
 Empty"
 
+[node name="Slot2DeleteButton" type="Button" parent="CenterContainer/Layout/Slot2Button"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -32.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = 32.0
+grow_horizontal = 0
+mouse_filter = 0
+flat = true
+theme_override_colors/font_color = Color(0.75, 0.2, 0.2, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.3, 0.3, 1)
+theme_override_colors/font_pressed_color = Color(0.55, 0.1, 0.1, 1)
+theme_override_font_sizes/font_size = 20
+text = "✕"
+
 [node name="Slot3Button" type="Button" parent="CenterContainer/Layout"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(400, 160)
@@ -94,6 +132,25 @@ theme_override_styles/focus = ExtResource("3_cardnormal")
 theme_override_styles/disabled = ExtResource("3_cardnormal")
 text = "Slot 3
 Empty"
+
+[node name="Slot3DeleteButton" type="Button" parent="CenterContainer/Layout/Slot3Button"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -32.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = 32.0
+grow_horizontal = 0
+mouse_filter = 0
+flat = true
+theme_override_colors/font_color = Color(0.75, 0.2, 0.2, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.3, 0.3, 1)
+theme_override_colors/font_pressed_color = Color(0.55, 0.1, 0.1, 1)
+theme_override_font_sizes/font_size = 20
+text = "✕"
 
 [node name="BackButton" type="Button" parent="CenterContainer/Layout"]
 layout_mode = 2
@@ -124,8 +181,26 @@ text = "This slot already has a saved game. Starting a new game here will overwr
 
 Continue?"
 
+[node name="DeleteConfirmation" parent="." instance=ExtResource("2_confirm")]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(420, 200)
+layout_mode = 1
+offset_left = -210.0
+offset_top = -100.0
+offset_right = 210.0
+offset_bottom = 100.0
+title = "Delete Save?"
+text = "This will permanently delete this slot's saved game. This can't be undone.
+
+Continue?"
+
 [connection signal="pressed" from="CenterContainer/Layout/Slot1Button" to="." method="_on_slot_button_pressed" binds=[0]]
+[connection signal="pressed" from="CenterContainer/Layout/Slot1Button/Slot1DeleteButton" to="." method="_on_delete_button_pressed" binds=[0]]
 [connection signal="pressed" from="CenterContainer/Layout/Slot2Button" to="." method="_on_slot_button_pressed" binds=[1]]
+[connection signal="pressed" from="CenterContainer/Layout/Slot2Button/Slot2DeleteButton" to="." method="_on_delete_button_pressed" binds=[1]]
 [connection signal="pressed" from="CenterContainer/Layout/Slot3Button" to="." method="_on_slot_button_pressed" binds=[2]]
+[connection signal="pressed" from="CenterContainer/Layout/Slot3Button/Slot3DeleteButton" to="." method="_on_delete_button_pressed" binds=[2]]
 [connection signal="pressed" from="CenterContainer/Layout/BackButton" to="." method="_on_back_button_pressed"]
 [connection signal="confirmed" from="OverwriteConfirmation" to="." method="_on_overwrite_confirmed"]
+[connection signal="confirmed" from="DeleteConfirmation" to="." method="_on_delete_confirmed"]

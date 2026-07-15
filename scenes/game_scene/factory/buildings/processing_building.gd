@@ -39,6 +39,15 @@ extends Building
 ## offers Dough and Batter, Oven offers Biscuit). The player picks the
 ## active one from these via assign_recipe().
 @export var available_recipes: Array[Recipe] = []
+## Offset from this building's position where a staffing Cat parks
+## (Cat._arrive_at_station()). Negative X/Z parks at the building's
+## top-left, screen-wise (camera never yaws, so world -X/-Z consistently
+## reads as screen left/up). **Moved here from a flat Cat-level export
+## (✅ 2026-07-15)** — it needs to vary per station *type* (the Assembly
+## Table's cat sits lower than the others, see decorating_table.tscn),
+## not per cat, and a cat visits many different station types over its
+## lifetime.
+@export var station_offset: Vector3 = Vector3(-0.8, 0.0, -0.8)
 
 ## Injected by the BuildingPlacer when placed, same as ShippingBin.economy.
 var recipe_shop: RecipeShop = null

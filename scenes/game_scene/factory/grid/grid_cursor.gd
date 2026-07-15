@@ -45,6 +45,15 @@ func _update_hover() -> void:
 	if camera == null:
 		_set_hover(false, hovered_cell)
 		return
+	if get_viewport().gui_get_hovered_control() != null:
+		# Mouse is over a HUD panel/button, not the 3D world — without this,
+		# the ground-plane raycast below runs anyway (it has no idea a GUI
+		# control is sitting on top) and highlights whatever cell happens to
+		# be behind the cursor, showing through the HUD. Same
+		# "gui_get_hovered_control() != null" check CameraRig's own
+		# _mouse_over_ui() already uses for gating scroll-wheel zoom.
+		_set_hover(false, hovered_cell)
+		return
 
 	var mouse_position: Vector2 = get_viewport().get_mouse_position()
 	var origin: Vector3 = camera.project_ray_origin(mouse_position)
