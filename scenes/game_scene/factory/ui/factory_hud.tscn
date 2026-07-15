@@ -1,0 +1,222 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/factory_hud.gd" id="1_hud"]
+[ext_resource type="PackedScene" path="res://scenes/windows/pause_menu_options_window.tscn" id="2_opts"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/ui/cat_inspector_panel.tscn" id="3_catpanel"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/ui/building_inspector_panel.tscn" id="4_buildingpanel"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/ui/cat_naming_dialog.tscn" id="5_namedialog"]
+[ext_resource type="PackedScene" path="res://scenes/windows/pause_menu_recipe_book_window.tscn" id="6_recipebook"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/ui/cat_batch_adopt_dialog.tscn" id="7_batchdialog"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/ui/game_complete_dialog.tscn" id="8_gamecomplete"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/recipe_card_normal.tres" id="12_cardbg"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/other_button_normal.tres" id="13_othernormal"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/other_button_hover.tres" id="14_otherhover"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/other_button_pressed.tres" id="15_otherpressed"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/pill_button_normal.tres" id="16_pillnormal"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/pill_button_hover.tres" id="17_pillhover"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/pill_button_pressed.tres" id="18_pillpressed"]
+
+[node name="FactoryHud" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="TopLeft" type="PanelContainer" parent="."]
+offset_left = 12.0
+offset_top = 8.0
+offset_right = 280.0
+offset_bottom = 72.0
+texture_filter = 1
+theme_override_styles/panel = ExtResource("12_cardbg")
+
+[node name="Margin" type="MarginContainer" parent="TopLeft"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 10
+
+[node name="Layout" type="VBoxContainer" parent="TopLeft/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="MoneyLabel" type="Label" parent="TopLeft/Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+text = "$ 0"
+
+[node name="ToolLabel" type="Label" parent="TopLeft/Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+text = "Tool: None"
+
+[node name="FpsLabel" type="Label" parent="TopLeft/Margin/Layout"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+text = "FPS: 0"
+
+[node name="JobsLabel" type="Label" parent="TopLeft/Margin/Layout"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+text = "Jobs: 0 active, 0 waiting"
+
+[node name="TopCenter" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -90.0
+offset_top = 8.0
+offset_right = 90.0
+offset_bottom = 44.0
+grow_horizontal = 2
+texture_filter = 1
+theme_override_styles/panel = ExtResource("12_cardbg")
+
+[node name="Margin" type="MarginContainer" parent="TopCenter"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="Layout" type="VBoxContainer" parent="TopCenter/Margin"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 4
+
+[node name="TierLabel" type="Label" parent="TopCenter/Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+horizontal_alignment = 1
+text = "Tier 0"
+
+[node name="TierCompleteButton" type="Button" parent="TopCenter/Margin/Layout"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_styles/normal = ExtResource("16_pillnormal")
+theme_override_styles/hover = ExtResource("17_pillhover")
+theme_override_styles/pressed = ExtResource("18_pillpressed")
+theme_override_styles/focus = ExtResource("16_pillnormal")
+text = "Tier Complete!"
+
+[node name="TopRight" type="HBoxContainer" parent="."]
+unique_name_in_owner = true
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 8.0
+offset_right = -12.0
+offset_bottom = 48.0
+grow_horizontal = 0
+alignment = 2
+
+[node name="BottomBar" type="HBoxContainer" parent="."]
+unique_name_in_owner = true
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -56.0
+offset_right = 160.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+alignment = 1
+
+[node name="BuildFlyout" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -320.0
+offset_top = -260.0
+offset_right = 320.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 0
+texture_filter = 1
+theme_override_styles/panel = ExtResource("12_cardbg")
+
+[node name="Margin" type="MarginContainer" parent="BuildFlyout"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="Layout" type="VBoxContainer" parent="BuildFlyout/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="BuildFlyout/Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_styles/normal = ExtResource("13_othernormal")
+theme_override_styles/hover = ExtResource("14_otherhover")
+theme_override_styles/pressed = ExtResource("15_otherpressed")
+theme_override_styles/focus = ExtResource("13_othernormal")
+text = "Back"
+
+[node name="BuildGrid" type="GridContainer" parent="BuildFlyout/Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 10
+columns = 3
+
+[node name="SettingsWindow" parent="." instance=ExtResource("2_opts")]
+unique_name_in_owner = true
+visible = false
+
+[node name="RecipeBookWindow" parent="." instance=ExtResource("6_recipebook")]
+unique_name_in_owner = true
+visible = false
+
+[node name="CatInspectorPanel" parent="." instance=ExtResource("3_catpanel")]
+unique_name_in_owner = true
+visible = false
+offset_left = 12.0
+offset_top = 100.0
+offset_right = 260.0
+offset_bottom = 200.0
+
+[node name="BuildingInspectorPanel" parent="." instance=ExtResource("4_buildingpanel")]
+unique_name_in_owner = true
+visible = false
+offset_left = 12.0
+offset_top = 100.0
+offset_right = 260.0
+offset_bottom = 220.0
+
+[node name="CatNamingDialog" parent="." instance=ExtResource("5_namedialog")]
+unique_name_in_owner = true
+visible = false
+
+[node name="CatBatchAdoptDialog" parent="." instance=ExtResource("7_batchdialog")]
+unique_name_in_owner = true
+visible = false
+
+[node name="GameCompleteDialog" parent="." instance=ExtResource("8_gamecomplete")]
+unique_name_in_owner = true
+visible = false

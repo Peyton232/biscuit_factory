@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/menus/options_menu/game/expanded_info_hud_control/expanded_info_hud_control.gd" id="1_control"]
+
+[node name="ExpandedInfoHudControl" type="HBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+script = ExtResource("1_control")
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Expanded Info HUD:"
+tooltip_text = "Show FPS and delivery-job counts on the in-game money/tool readout, in addition to Money and Tool."
+
+[node name="Checkbox" type="CheckBox" parent="."]
+unique_name_in_owner = true
+layout_mode = 2

@@ -1,0 +1,79 @@
+[gd_scene load_steps=18 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/buildings/mixer.gd" id="1_mixer"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/building_progress_bar.gd" id="4_bar"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/building_inventory_label.gd" id="5_invlabel"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/building_item_display.gd" id="14_itemdisplay"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/station_sound.gd" id="19_stationsound"]
+[ext_resource type="AudioStream" path="res://assets/sounds/effects/mixer_ambient.wav" id="20_ambient"]
+[ext_resource type="Texture2D" path="res://assets/sprites/buildings/mixer.png" id="2_sprite"]
+[ext_resource type="Texture2D" path="res://assets/sprites/effects/blob_shadow.png" id="3_blob"]
+[ext_resource type="Texture2D" path="res://assets/sprites/buildings/mixer_progress_1.png" id="15_progress1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/buildings/mixer_progress_2.png" id="16_progress2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/buildings/mixer_progress_3.png" id="17_progress3"]
+[ext_resource type="Texture2D" path="res://assets/sprites/buildings/mixer_progress_4.png" id="18_progress4"]
+[ext_resource type="Resource" path="res://resources/recipes/whipped_cream.tres" id="6_whippedcream"]
+[ext_resource type="Resource" path="res://resources/recipes/basic_dough.tres" id="7_basicdough"]
+[ext_resource type="Resource" path="res://resources/recipes/rich_dough.tres" id="8_richdough"]
+[ext_resource type="Resource" path="res://resources/recipes/pie_dough.tres" id="9_piedough"]
+[ext_resource type="Resource" path="res://resources/recipes/frosting.tres" id="10_frosting"]
+[ext_resource type="Resource" path="res://resources/recipes/sweet_dough.tres" id="11_sweetdough"]
+[ext_resource type="Resource" path="res://resources/recipes/batter.tres" id="12_batter"]
+[ext_resource type="Resource" path="res://resources/recipes/meringue.tres" id="13_meringue"]
+
+[sub_resource type="StandardMaterial3D" id="mat_blob"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("3_blob")
+
+[sub_resource type="PlaneMesh" id="mesh_blob"]
+material = SubResource("mat_blob")
+size = Vector2(1.9, 1.4)
+
+[node name="Mixer" type="Node3D"]
+script = ExtResource("1_mixer")
+required_role = 1
+progress_textures = Array[Texture2D]([ExtResource("15_progress1"), ExtResource("16_progress2"), ExtResource("17_progress3"), ExtResource("18_progress4")])
+available_recipes = Array[Recipe]([ExtResource("6_whippedcream"), ExtResource("7_basicdough"), ExtResource("8_richdough"), ExtResource("9_piedough"), ExtResource("10_frosting"), ExtResource("11_sweetdough"), ExtResource("12_batter"), ExtResource("13_meringue")])
+
+[node name="Visual" type="Sprite3D" parent="."]
+position = Vector3(0, 0.05, 0)
+offset = Vector2(0, 61.5)
+cast_shadow = 0
+pixel_size = 0.022472
+billboard = 1
+texture_filter = 0
+alpha_cut = 1
+texture = ExtResource("2_sprite")
+
+[node name="Shadow" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.03, 0)
+cast_shadow = 0
+mesh = SubResource("mesh_blob")
+
+[node name="ProgressBar" type="Node3D" parent="." node_paths=PackedStringArray("building")]
+position = Vector3(0, 1.85, 0)
+script = ExtResource("4_bar")
+building = NodePath("..")
+
+[node name="InventoryLabel" type="Label3D" parent="." node_paths=PackedStringArray("building")]
+position = Vector3(0, 0.05, 0)
+offset = Vector2(0, 281)
+pixel_size = 0.008
+billboard = 1
+text = ""
+font_size = 30
+outline_size = 10
+horizontal_alignment = 1
+script = ExtResource("5_invlabel")
+building = NodePath("..")
+
+[node name="ItemDisplay" type="Node3D" parent="." node_paths=PackedStringArray("building")]
+script = ExtResource("14_itemdisplay")
+height_offset_px = 109.0
+building = NodePath("..")
+
+[node name="StationSound" type="Node3D" parent="." node_paths=PackedStringArray("building")]
+script = ExtResource("19_stationsound")
+building = NodePath("..")
+ambient_sound = ExtResource("20_ambient")

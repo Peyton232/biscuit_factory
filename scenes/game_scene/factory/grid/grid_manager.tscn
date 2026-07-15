@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/grid/grid_manager.gd" id="1_gridmgr"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/grid/grid_debug_visual.gd" id="2_gridviz"]
+
+[node name="GridManager" type="Node3D"]
+script = ExtResource("1_gridmgr")
+
+[node name="DebugGrid" type="MeshInstance3D" parent="." node_paths=PackedStringArray("grid_manager")]
+script = ExtResource("2_gridviz")
+grid_manager = NodePath("..")

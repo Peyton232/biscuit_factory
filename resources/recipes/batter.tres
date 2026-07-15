@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="Recipe" format=3 uid="uid://cfmk1ie3yesry"]
+
+[ext_resource type="Script" uid="uid://byuddkc0t0y00" path="res://scenes/game_scene/factory/buildings/recipe.gd" id="1_recipe"]
+
+[resource]
+script = ExtResource("1_recipe")
+display_name = "Batter"
+inputs = Array[StringName]([&"flour", &"sugar", &"eggs", &"milk"])
+output = &"batter"
+processing_time = 4.0
+station_name = "Mixer"

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BuildingDefinition" format=3 uid="uid://c8deuetaemdpe"]
+
+[ext_resource type="Script" uid="uid://c5b5bdpewmhou" path="res://scenes/game_scene/factory/buildings/building_definition.gd" id="1_def"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/buildings/ingredient_source.tscn" id="2_scene"]
+[ext_resource type="Texture2D" uid="uid://bgrsy0tb6y4f" path="res://assets/sprites/buildings/egg_source.png" id="3_icon"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Egg Source"
+description = "Produces eggs automatically over time — no cat required, just collect them before they pile up."
+icon = ExtResource("3_icon")
+icon_pixel_size = 0.021739
+cost = 40
+outputs = Array[StringName]([&"eggs"])
+input_capacity = 0
+output_capacity = 5
+scene = ExtResource("2_scene")

@@ -1,0 +1,59 @@
+[gd_scene load_steps=30 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/recipe_book.gd" id="1_book"]
+[ext_resource type="Resource" path="res://resources/recipes/whipped_cream.tres" id="2_whippedcream"]
+[ext_resource type="Resource" path="res://resources/recipes/basic_dough.tres" id="3_basicdough"]
+[ext_resource type="Resource" path="res://resources/recipes/bread.tres" id="4_bread"]
+[ext_resource type="Resource" path="res://resources/recipes/cream_bun.tres" id="5_creambun"]
+[ext_resource type="Resource" path="res://resources/recipes/rich_dough.tres" id="6_richdough"]
+[ext_resource type="Resource" path="res://resources/recipes/bread_roll.tres" id="7_breadroll"]
+[ext_resource type="Resource" path="res://resources/recipes/butter_roll.tres" id="8_butterroll"]
+[ext_resource type="Resource" path="res://resources/recipes/croissant.tres" id="9_croissant"]
+[ext_resource type="Resource" path="res://resources/recipes/pie_dough.tres" id="10_piedough"]
+[ext_resource type="Resource" path="res://resources/recipes/cream_pie.tres" id="11_creampie"]
+[ext_resource type="Resource" path="res://resources/recipes/cut_biscuit.tres" id="12_cutbiscuit"]
+[ext_resource type="Resource" path="res://resources/recipes/biscuit.tres" id="13_biscuit"]
+[ext_resource type="Resource" path="res://resources/recipes/sliced_bread.tres" id="14_slicedbread"]
+[ext_resource type="Resource" path="res://resources/recipes/toast.tres" id="15_toast"]
+[ext_resource type="Resource" path="res://resources/recipes/buttered_toast.tres" id="16_butteredtoast"]
+[ext_resource type="Resource" path="res://resources/recipes/frosting.tres" id="17_frosting"]
+[ext_resource type="Resource" path="res://resources/recipes/sweet_dough.tres" id="18_sweetdough"]
+[ext_resource type="Resource" path="res://resources/recipes/sweet_roll.tres" id="19_sweetroll"]
+[ext_resource type="Resource" path="res://resources/recipes/frosted_sweet_roll.tres" id="20_frostedsweetroll"]
+[ext_resource type="Resource" path="res://resources/recipes/cookie_cutout.tres" id="21_cookiecutout"]
+[ext_resource type="Resource" path="res://resources/recipes/sugar_cookie.tres" id="22_sugarcookie"]
+[ext_resource type="Resource" path="res://resources/recipes/frosted_sugar_cookie.tres" id="23_frostedsugarcookie"]
+[ext_resource type="Resource" path="res://resources/recipes/batter.tres" id="24_batter"]
+[ext_resource type="Resource" path="res://resources/recipes/cake_layer.tres" id="25_cakelayer"]
+[ext_resource type="Resource" path="res://resources/recipes/frosted_cake.tres" id="26_frostedcake"]
+[ext_resource type="Resource" path="res://resources/recipes/meringue.tres" id="27_meringue"]
+[ext_resource type="Resource" path="res://resources/recipes/meringue_pie.tres" id="28_meringuepie"]
+[ext_resource type="Resource" path="res://resources/recipes/danish.tres" id="29_danish"]
+[ext_resource type="Resource" path="res://resources/recipes/french_toast.tres" id="30_frenchtoast"]
+
+[node name="RecipeBook" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_book")
+recipes = Array[Recipe]([ExtResource("2_whippedcream"), ExtResource("3_basicdough"), ExtResource("4_bread"), ExtResource("5_creambun"), ExtResource("6_richdough"), ExtResource("7_breadroll"), ExtResource("8_butterroll"), ExtResource("9_croissant"), ExtResource("10_piedough"), ExtResource("11_creampie"), ExtResource("12_cutbiscuit"), ExtResource("13_biscuit"), ExtResource("14_slicedbread"), ExtResource("15_toast"), ExtResource("16_butteredtoast"), ExtResource("17_frosting"), ExtResource("18_sweetdough"), ExtResource("19_sweetroll"), ExtResource("20_frostedsweetroll"), ExtResource("21_cookiecutout"), ExtResource("22_sugarcookie"), ExtResource("23_frostedsugarcookie"), ExtResource("24_batter"), ExtResource("25_cakelayer"), ExtResource("26_frostedcake"), ExtResource("27_meringue"), ExtResource("28_meringuepie"), ExtResource("29_danish"), ExtResource("30_frenchtoast")])
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+custom_minimum_size = Vector2(0, 320)
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="CardList" type="VBoxContainer" parent="Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+theme_override_constants/separation = 12

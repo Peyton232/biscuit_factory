@@ -1,0 +1,70 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/buildings/shipping_bin.gd" id="1_bin"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/building_inventory_label.gd" id="5_invlabel"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/building_item_display.gd" id="6_itemdisplay"]
+[ext_resource type="Texture2D" path="res://assets/sprites/buildings/shipping_bin.png" id="2_sprite"]
+[ext_resource type="Texture2D" path="res://assets/sprites/effects/blob_shadow.png" id="3_blob"]
+[ext_resource type="Texture2D" path="res://assets/sprites/buildings/shipping_bin_open.png" id="7_open"]
+
+[sub_resource type="StandardMaterial3D" id="mat_blob"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("3_blob")
+
+[sub_resource type="PlaneMesh" id="mesh_blob"]
+material = SubResource("mat_blob")
+size = Vector2(1.9, 1.4)
+
+[node name="ShippingBin" type="Node3D"]
+script = ExtResource("1_bin")
+texture_open = ExtResource("7_open")
+sell_prices = {
+&"whipped_cream": 5,
+&"bread": 10,
+&"bread_roll": 18,
+&"cream_bun": 20,
+&"butter_roll": 26,
+&"croissant": 30,
+&"buttered_toast": 30,
+&"biscuit": 32,
+&"cream_pie": 36,
+&"french_toast": 50,
+&"danish": 55,
+&"meringue_pie": 70,
+&"frosted_sweet_roll": 48,
+&"frosted_sugar_cookie": 52,
+&"frosted_cake": 80
+}
+
+[node name="Visual" type="Sprite3D" parent="."]
+position = Vector3(0, 0.05, 0)
+offset = Vector2(0, 29)
+cast_shadow = 0
+pixel_size = 0.022222
+billboard = 1
+texture_filter = 0
+alpha_cut = 1
+texture = ExtResource("2_sprite")
+
+[node name="Shadow" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.03, 0)
+cast_shadow = 0
+mesh = SubResource("mesh_blob")
+
+[node name="InventoryLabel" type="Label3D" parent="." node_paths=PackedStringArray("building")]
+position = Vector3(0, 0.05, 0)
+offset = Vector2(0, 281)
+pixel_size = 0.008
+billboard = 1
+text = ""
+font_size = 30
+outline_size = 10
+horizontal_alignment = 1
+script = ExtResource("5_invlabel")
+building = NodePath("..")
+
+[node name="ItemDisplay" type="Node3D" parent="." node_paths=PackedStringArray("building")]
+script = ExtResource("6_itemdisplay")
+height_offset_px = 61.0
+building = NodePath("..")

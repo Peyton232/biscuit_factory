@@ -1,0 +1,40 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/building_book.gd" id="1_book"]
+[ext_resource type="Resource" path="res://resources/buildings/milk_source.tres" id="2_milk"]
+[ext_resource type="Resource" path="res://resources/buildings/ingredient_source.tres" id="3_flour"]
+[ext_resource type="Resource" path="res://resources/buildings/butter_source.tres" id="4_butter"]
+[ext_resource type="Resource" path="res://resources/buildings/sugar_source.tres" id="5_sugar"]
+[ext_resource type="Resource" path="res://resources/buildings/egg_source.tres" id="6_egg"]
+[ext_resource type="Resource" path="res://resources/buildings/mixer.tres" id="7_mixer"]
+[ext_resource type="Resource" path="res://resources/buildings/prep_table.tres" id="8_cutting"]
+[ext_resource type="Resource" path="res://resources/buildings/oven.tres" id="9_oven"]
+[ext_resource type="Resource" path="res://resources/buildings/decorating_table.tres" id="10_assembly"]
+[ext_resource type="Resource" path="res://resources/buildings/shipping_bin.tres" id="11_bin"]
+
+[node name="BuildingBook" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_book")
+building_definitions = Array[BuildingDefinition]([ExtResource("2_milk"), ExtResource("3_flour"), ExtResource("4_butter"), ExtResource("5_sugar"), ExtResource("6_egg"), ExtResource("7_mixer"), ExtResource("8_cutting"), ExtResource("9_oven"), ExtResource("10_assembly"), ExtResource("11_bin")])
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+custom_minimum_size = Vector2(0, 320)
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="CardList" type="VBoxContainer" parent="Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+theme_override_constants/separation = 12

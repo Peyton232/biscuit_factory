@@ -1,0 +1,80 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/opening_sequence.gd" id="1_script"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/text_box_panel.tres" id="2_textbox"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/next_button_normal.tres" id="3_nextnormal"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/next_button_hover.tres" id="5_nexthover"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/next_button_pressed.tres" id="6_nextpressed"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/skip_button_normal.tres" id="4_skipnormal"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/skip_button_hover.tres" id="7_skiphover"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/skip_button_pressed.tres" id="8_skippressed"]
+
+[node name="OpeningSequence" type="Node"]
+script = ExtResource("1_script")
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="MessagePanel" type="PanelContainer" parent="Overlay"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -170.0
+offset_right = 260.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 0
+texture_filter = 1
+theme_override_styles/panel = ExtResource("2_textbox")
+
+[node name="Margin" type="MarginContainer" parent="Overlay/MessagePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 10
+
+[node name="Layout" type="VBoxContainer" parent="Overlay/MessagePanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TextLabel" type="Label" parent="Overlay/MessagePanel/Margin/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+autowrap_mode = 3
+horizontal_alignment = 1
+text = "Every great bakery starts somewhere..."
+
+[node name="Buttons" type="HBoxContainer" parent="Overlay/MessagePanel/Margin/Layout"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="NextButton" type="Button" parent="Overlay/MessagePanel/Margin/Layout/Buttons"]
+layout_mode = 2
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_styles/normal = ExtResource("3_nextnormal")
+theme_override_styles/hover = ExtResource("5_nexthover")
+theme_override_styles/pressed = ExtResource("6_nextpressed")
+theme_override_styles/focus = ExtResource("3_nextnormal")
+text = "Next"
+
+[node name="SkipButton" type="Button" parent="Overlay/MessagePanel/Margin/Layout/Buttons"]
+layout_mode = 2
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_styles/normal = ExtResource("4_skipnormal")
+theme_override_styles/hover = ExtResource("7_skiphover")
+theme_override_styles/pressed = ExtResource("8_skippressed")
+theme_override_styles/focus = ExtResource("4_skipnormal")
+text = "Skip"

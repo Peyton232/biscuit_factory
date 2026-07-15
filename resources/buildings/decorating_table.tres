@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BuildingDefinition" format=3 uid="uid://dujbxyabsv5ns"]
+
+[ext_resource type="Script" uid="uid://c5b5bdpewmhou" path="res://scenes/game_scene/factory/buildings/building_definition.gd" id="1_def"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/buildings/decorating_table.tscn" id="2_scene"]
+[ext_resource type="Texture2D" uid="uid://c7233wd208kkj" path="res://assets/sprites/buildings/decorating_table.png" id="3_icon"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Assembly Table"
+description = "Decorates and assembles finished treats like cakes and frosted pastries — needs an Assembler cat staffing it to run."
+icon = ExtResource("3_icon")
+icon_pixel_size = 0.021739
+cost = 70
+input_capacity = 3
+output_capacity = 1
+scene = ExtResource("2_scene")

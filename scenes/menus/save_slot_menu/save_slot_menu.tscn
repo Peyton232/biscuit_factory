@@ -1,0 +1,131 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scenes/menus/save_slot_menu/save_slot_menu.gd" id="1_slotmenu"]
+[ext_resource type="PackedScene" uid="uid://cwt4p3bufkke5" path="res://addons/maaacks_game_template/base/nodes/windows/confirmation_overlaid_window.tscn" id="2_confirm"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/recipe_card_normal.tres" id="3_cardnormal"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/recipe_card_hover.tres" id="4_cardhover"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/recipe_card_pressed.tres" id="5_cardpressed"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/pill_button_normal.tres" id="6_pillnormal"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/pill_button_hover.tres" id="7_pillhover"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/pill_button_pressed.tres" id="8_pillpressed"]
+
+[node name="SaveSlotMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_slotmenu")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Layout" type="VBoxContainer" parent="CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/Layout"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+text = "Choose a Save Slot"
+
+[node name="Slot1Button" type="Button" parent="CenterContainer/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 160)
+layout_mode = 2
+size_flags_horizontal = 4
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_disabled_color = Color(0.45, 0.4, 0.35, 1)
+theme_override_styles/normal = ExtResource("3_cardnormal")
+theme_override_styles/hover = ExtResource("4_cardhover")
+theme_override_styles/pressed = ExtResource("5_cardpressed")
+theme_override_styles/focus = ExtResource("3_cardnormal")
+theme_override_styles/disabled = ExtResource("3_cardnormal")
+text = "Slot 1
+Empty"
+
+[node name="Slot2Button" type="Button" parent="CenterContainer/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 160)
+layout_mode = 2
+size_flags_horizontal = 4
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_disabled_color = Color(0.45, 0.4, 0.35, 1)
+theme_override_styles/normal = ExtResource("3_cardnormal")
+theme_override_styles/hover = ExtResource("4_cardhover")
+theme_override_styles/pressed = ExtResource("5_cardpressed")
+theme_override_styles/focus = ExtResource("3_cardnormal")
+theme_override_styles/disabled = ExtResource("3_cardnormal")
+text = "Slot 2
+Empty"
+
+[node name="Slot3Button" type="Button" parent="CenterContainer/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 160)
+layout_mode = 2
+size_flags_horizontal = 4
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_disabled_color = Color(0.45, 0.4, 0.35, 1)
+theme_override_styles/normal = ExtResource("3_cardnormal")
+theme_override_styles/hover = ExtResource("4_cardhover")
+theme_override_styles/pressed = ExtResource("5_cardpressed")
+theme_override_styles/focus = ExtResource("3_cardnormal")
+theme_override_styles/disabled = ExtResource("3_cardnormal")
+text = "Slot 3
+Empty"
+
+[node name="BackButton" type="Button" parent="CenterContainer/Layout"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 40)
+size_flags_horizontal = 4
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_styles/normal = ExtResource("6_pillnormal")
+theme_override_styles/hover = ExtResource("7_pillhover")
+theme_override_styles/pressed = ExtResource("8_pillpressed")
+theme_override_styles/focus = ExtResource("6_pillnormal")
+text = "Back"
+
+[node name="OverwriteConfirmation" parent="." instance=ExtResource("2_confirm")]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(420, 200)
+layout_mode = 1
+offset_left = -210.0
+offset_top = -100.0
+offset_right = 210.0
+offset_bottom = 100.0
+title = "Overwrite Save?"
+text = "This slot already has a saved game. Starting a new game here will overwrite it once you save or exit.
+
+Continue?"
+
+[connection signal="pressed" from="CenterContainer/Layout/Slot1Button" to="." method="_on_slot_button_pressed" binds=[0]]
+[connection signal="pressed" from="CenterContainer/Layout/Slot2Button" to="." method="_on_slot_button_pressed" binds=[1]]
+[connection signal="pressed" from="CenterContainer/Layout/Slot3Button" to="." method="_on_slot_button_pressed" binds=[2]]
+[connection signal="pressed" from="CenterContainer/Layout/BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="confirmed" from="OverwriteConfirmation" to="." method="_on_overwrite_confirmed"]

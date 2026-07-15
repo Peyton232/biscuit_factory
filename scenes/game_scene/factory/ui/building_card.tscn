@@ -1,0 +1,56 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/building_card.gd" id="1_card"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/recipe_card_normal.tres" id="2_cardbg"]
+
+[node name="BuildingCard" type="PanelContainer"]
+custom_minimum_size = Vector2(550, 170)
+size_flags_horizontal = 4
+texture_filter = 1
+theme_override_styles/panel = ExtResource("2_cardbg")
+script = ExtResource("1_card")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 16
+
+[node name="Layout" type="HBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Icon" type="TextureRect" parent="Margin/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_vertical = 4
+stretch_mode = 5
+
+[node name="TextLayout" type="VBoxContainer" parent="Margin/Layout"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_constants/separation = 6
+
+[node name="NameLabel" type="Label" parent="Margin/Layout/TextLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_font_sizes/font_size = 18
+text = "Building"
+
+[node name="CostLabel" type="Label" parent="Margin/Layout/TextLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_font_sizes/font_size = 12
+text = "Cost: $0"
+
+[node name="DescriptionLabel" type="Label" parent="Margin/Layout/TextLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+autowrap_mode = 3
+text = "Description."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BuildingDefinition" format=3 uid="uid://cfdsn4peqk3hy"]
+
+[ext_resource type="Script" uid="uid://c5b5bdpewmhou" path="res://scenes/game_scene/factory/buildings/building_definition.gd" id="1_def"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/buildings/shipping_bin.tscn" id="2_scene"]
+[ext_resource type="Texture2D" uid="uid://bcalt0n7r5blh" path="res://assets/sprites/buildings/shipping_bin.png" id="3_icon"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Shipping Bin"
+description = "Sells finished goods automatically for cash — no cat required; choose exactly which items each bin accepts."
+icon = ExtResource("3_icon")
+icon_pixel_size = 0.022222
+cost = 15
+input_capacity = 8
+output_capacity = 0
+scene = ExtResource("2_scene")

@@ -1,0 +1,79 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/buildings/decorating_table.gd" id="1_decorate"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/building_progress_bar.gd" id="4_bar"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/building_inventory_label.gd" id="5_invlabel"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/building_item_display.gd" id="12_itemdisplay"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/station_sound.gd" id="15_stationsound"]
+[ext_resource type="AudioStream" path="res://assets/sounds/effects/assembly_pop.wav" id="16_startsound"]
+[ext_resource type="Texture2D" path="res://assets/sprites/buildings/decorating_table.png" id="2_sprite"]
+[ext_resource type="Texture2D" path="res://assets/sprites/effects/blob_shadow.png" id="3_blob"]
+[ext_resource type="Texture2D" path="res://assets/sprites/buildings/decorating_table_active_1.png" id="13_active1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/buildings/decorating_table_active_2.png" id="14_active2"]
+[ext_resource type="Resource" path="res://resources/recipes/cream_bun.tres" id="6_creambun"]
+[ext_resource type="Resource" path="res://resources/recipes/butter_roll.tres" id="7_butterroll"]
+[ext_resource type="Resource" path="res://resources/recipes/buttered_toast.tres" id="8_butteredtoast"]
+[ext_resource type="Resource" path="res://resources/recipes/frosted_sweet_roll.tres" id="9_frostedsweetroll"]
+[ext_resource type="Resource" path="res://resources/recipes/frosted_sugar_cookie.tres" id="10_frostedsugarcookie"]
+[ext_resource type="Resource" path="res://resources/recipes/frosted_cake.tres" id="11_frostedcake"]
+
+[sub_resource type="StandardMaterial3D" id="mat_blob"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("3_blob")
+
+[sub_resource type="PlaneMesh" id="mesh_blob"]
+material = SubResource("mat_blob")
+size = Vector2(1.9, 1.4)
+
+[node name="DecoratingTable" type="Node3D"]
+script = ExtResource("1_decorate")
+required_role = 4
+texture_active_1 = ExtResource("13_active1")
+texture_active_2 = ExtResource("14_active2")
+available_recipes = Array[Recipe]([ExtResource("6_creambun"), ExtResource("7_butterroll"), ExtResource("8_butteredtoast"), ExtResource("9_frostedsweetroll"), ExtResource("10_frostedsugarcookie"), ExtResource("11_frostedcake")])
+
+[node name="Visual" type="Sprite3D" parent="."]
+position = Vector3(0, 0.05, 0)
+offset = Vector2(0, 32.5)
+cast_shadow = 0
+pixel_size = 0.021739
+billboard = 1
+texture_filter = 0
+alpha_cut = 1
+texture = ExtResource("2_sprite")
+
+[node name="Shadow" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.03, 0)
+cast_shadow = 0
+mesh = SubResource("mesh_blob")
+
+[node name="ProgressBar" type="Node3D" parent="." node_paths=PackedStringArray("building")]
+position = Vector3(0, 1.85, 0)
+script = ExtResource("4_bar")
+building = NodePath("..")
+
+[node name="InventoryLabel" type="Label3D" parent="." node_paths=PackedStringArray("building")]
+position = Vector3(0, 0.05, 0)
+offset = Vector2(0, 281)
+pixel_size = 0.008
+billboard = 1
+text = ""
+font_size = 30
+outline_size = 10
+horizontal_alignment = 1
+script = ExtResource("5_invlabel")
+building = NodePath("..")
+
+[node name="ItemDisplay" type="Node3D" parent="." node_paths=PackedStringArray("building")]
+script = ExtResource("12_itemdisplay")
+height_offset_px = 80.0
+row_offset_x_px = -38.0
+separate_output_position = true
+output_offset_px = Vector2(-4, 90)
+building = NodePath("..")
+
+[node name="StationSound" type="Node3D" parent="." node_paths=PackedStringArray("building")]
+script = ExtResource("15_stationsound")
+building = NodePath("..")
+start_sound = ExtResource("16_startsound")

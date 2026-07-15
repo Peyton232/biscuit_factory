@@ -1,0 +1,40 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/victory_sequence.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://b70k3m1utqn6g" path="res://scenes/credits/scrolling_credits.tscn" id="2_credits"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/ui/bakery_report_dialog.tscn" id="3_report"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/ui/employee_awards_dialog.tscn" id="4_awards"]
+
+[node name="VictorySequence" type="Node"]
+script = ExtResource("1_script")
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="TransitionFade" type="ColorRect" parent="Overlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="CreditsPanel" type="ColorRect" parent="Overlay"]
+layout_mode = 1
+anchor_right = 0.5
+anchor_bottom = 1.0
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="ScrollingCredits" parent="Overlay/CreditsPanel" instance=ExtResource("2_credits")]
+layout_mode = 1
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BakeryReportDialog" parent="Overlay" instance=ExtResource("3_report")]
+
+[node name="EmployeeAwardsDialog" parent="Overlay" instance=ExtResource("4_awards")]

@@ -1,0 +1,127 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/cat_inspector_panel.gd" id="1_panel"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/recipe_card_normal.tres" id="2_cardbg"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/pill_button_normal.tres" id="3_pillnormal"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/pill_button_hover.tres" id="4_pillhover"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/pill_button_pressed.tres" id="5_pillpressed"]
+
+[node name="CatInspectorPanel" type="PanelContainer"]
+texture_filter = 1
+theme_override_styles/panel = ExtResource("2_cardbg")
+script = ExtResource("1_panel")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="Layout" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="NameEdit" type="LineEdit" parent="Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_placeholder_color = Color(0.18, 0.13, 0.09, 0.5)
+theme_override_styles/normal = ExtResource("3_pillnormal")
+theme_override_styles/focus = ExtResource("3_pillnormal")
+placeholder_text = "Cat name"
+
+[node name="RoleButtons" type="GridContainer" parent="Margin/Layout"]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 3
+
+[node name="RoleDeliveryButton" type="Button" parent="Margin/Layout/RoleButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_styles/normal = ExtResource("3_pillnormal")
+theme_override_styles/hover = ExtResource("4_pillhover")
+theme_override_styles/pressed = ExtResource("5_pillpressed")
+theme_override_styles/focus = ExtResource("3_pillnormal")
+toggle_mode = true
+text = "Delivery"
+
+[node name="RoleMixerButton" type="Button" parent="Margin/Layout/RoleButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_styles/normal = ExtResource("3_pillnormal")
+theme_override_styles/hover = ExtResource("4_pillhover")
+theme_override_styles/pressed = ExtResource("5_pillpressed")
+theme_override_styles/focus = ExtResource("3_pillnormal")
+toggle_mode = true
+text = "Mixer"
+
+[node name="RoleOvenButton" type="Button" parent="Margin/Layout/RoleButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_styles/normal = ExtResource("3_pillnormal")
+theme_override_styles/hover = ExtResource("4_pillhover")
+theme_override_styles/pressed = ExtResource("5_pillpressed")
+theme_override_styles/focus = ExtResource("3_pillnormal")
+toggle_mode = true
+text = "Oven"
+
+[node name="RoleCutterButton" type="Button" parent="Margin/Layout/RoleButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_styles/normal = ExtResource("3_pillnormal")
+theme_override_styles/hover = ExtResource("4_pillhover")
+theme_override_styles/pressed = ExtResource("5_pillpressed")
+theme_override_styles/focus = ExtResource("3_pillnormal")
+toggle_mode = true
+text = "Cutter"
+
+[node name="RoleAssemblerButton" type="Button" parent="Margin/Layout/RoleButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_styles/normal = ExtResource("3_pillnormal")
+theme_override_styles/hover = ExtResource("4_pillhover")
+theme_override_styles/pressed = ExtResource("5_pillpressed")
+theme_override_styles/focus = ExtResource("3_pillnormal")
+toggle_mode = true
+text = "Assembler"
+
+[node name="PickUpButton" type="Button" parent="Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_styles/normal = ExtResource("3_pillnormal")
+theme_override_styles/hover = ExtResource("4_pillhover")
+theme_override_styles/pressed = ExtResource("5_pillpressed")
+theme_override_styles/focus = ExtResource("3_pillnormal")
+text = "Pick Up"

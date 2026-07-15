@@ -1,0 +1,85 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/stats_page.gd" id="1_stats"]
+[ext_resource type="StyleBoxTexture" path="res://resources/themes/recipe_card_normal.tres" id="2_cardbg"]
+
+[node name="StatsPage" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_stats")
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(550, 0)
+layout_mode = 2
+texture_filter = 1
+theme_override_styles/panel = ExtResource("2_cardbg")
+
+[node name="Margin" type="MarginContainer" parent="Center/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 18
+
+[node name="ContentList" type="VBoxContainer" parent="Center/Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="Center/Card/Margin/ContentList"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+text = "Lifetime Stats"
+
+[node name="MoneyLabel" type="Label" parent="Center/Card/Margin/ContentList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+text = "Lifetime Money Earned: $0"
+
+[node name="CatsLabel" type="Label" parent="Center/Card/Margin/ContentList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+text = "Lifetime Cats Adopted: 0"
+
+[node name="PlaytimeLabel" type="Label" parent="Center/Card/Margin/ContentList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+text = "Total Playtime: 0m"
+
+[node name="ItemsHeaderLabel" type="Label" parent="Center/Card/Margin/ContentList"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+text = "Items Shipped"
+
+[node name="EmptyLabel" type="Label" parent="Center/Card/Margin/ContentList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+text = "Nothing shipped yet."
+
+[node name="ItemsScroll" type="ScrollContainer" parent="Center/Card/Margin/ContentList"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="ItemsList" type="VBoxContainer" parent="Center/Card/Margin/ContentList/ItemsScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4

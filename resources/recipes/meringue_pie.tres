@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="Recipe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/buildings/recipe.gd" id="1_recipe"]
+
+[resource]
+script = ExtResource("1_recipe")
+display_name = "Meringue Pie"
+inputs = Array[StringName]([&"pie_dough", &"meringue", &"whipped_cream"])
+output = &"meringue_pie"
+processing_time = 5.5
+station_name = "Oven"

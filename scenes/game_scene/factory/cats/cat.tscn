@@ -1,0 +1,56 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_scene/factory/cats/cat.gd" id="1_cat"]
+[ext_resource type="Texture2D" path="res://assets/sprites/cats/sprite_sheet.png" id="2_sprite"]
+[ext_resource type="Texture2D" path="res://assets/sprites/effects/blob_shadow.png" id="3_blob"]
+
+[sub_resource type="StandardMaterial3D" id="mat_blob"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("3_blob")
+
+[sub_resource type="PlaneMesh" id="mesh_blob"]
+material = SubResource("mat_blob")
+size = Vector2(1.44, 1.08)
+
+[node name="Cat" type="Node3D"]
+script = ExtResource("1_cat")
+
+[node name="Visual" type="Sprite3D" parent="."]
+position = Vector3(0, 0.05, 0)
+offset = Vector2(0, 1500)
+cast_shadow = 0
+pixel_size = 0.00054
+billboard = 1
+texture_filter = 0
+alpha_cut = 1
+hframes = 4
+vframes = 1
+frame = 0
+texture = ExtResource("2_sprite")
+
+[node name="CarriedItem" type="Sprite3D" parent="."]
+visible = false
+position = Vector3(0, 0.05, 0)
+offset = Vector2(0, 30)
+render_priority = 1
+no_depth_test = true
+cast_shadow = 0
+pixel_size = 0.03
+billboard = 1
+texture_filter = 0
+
+[node name="NameLabel" type="Label3D" parent="."]
+position = Vector3(0, 0.05, 0)
+offset = Vector2(0, 252)
+pixel_size = 0.007
+billboard = 1
+text = "Cat"
+font_size = 28
+outline_size = 10
+horizontal_alignment = 1
+
+[node name="Shadow" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.03, 0)
+cast_shadow = 0
+mesh = SubResource("mesh_blob")

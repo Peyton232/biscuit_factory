@@ -1,0 +1,394 @@
+﻿Tiers and Recipes 
+Tier 0 (tutorial)
+Unlocked: 
+* Automatically
+
+
+Building unlocks
+* Milk source 
+* Mixer
+* shipping bin
+
+
+Recipe unlocks: 
+* whipped cream 
+
+Recipe
+	Building
+	Inputs
+	Whipped Cream
+	Mixer
+	Milk
+	
+Tier 1
+Unlocked:
+   * Ship x5 whipped cream 
+
+
+Building unlocks:
+   * Flour source 
+   * Oven 
+   * Assembly Table
+
+Recipe unlocks: 
+   * Basic dough
+   * Bread 
+   * Cream Bun 
+
+
+Recipe
+	Building
+	Inputs
+	Basic Dough
+	Mixer
+	Flour
+	Bread
+	Oven
+	Basic Dough
+	Cream Bun 
+	Assembly Table
+	Bread + Whipped Cream
+	
+
+Tier 2
+Unlocked:
+   * Ship x10 Bread
+   * Ship x5 Cream Buns
+
+
+Building unlocks:
+   * Butter source 
+
+Recipe unlocks: 
+   * Rich Dough
+   * Bread Rolls 
+   * Butter Rolls
+   * Croissants 
+   * Pie Dough
+   * Cream Pie
+
+
+Recipe
+	Building
+	Inputs
+	Rich Dough
+	Mixer
+	Flour + Butter + Milk
+	Bread Rolls
+	Oven
+	Rich Dough
+	Butter Rolls 
+	Assembly Table
+	Bread Rolls + Butter
+	Croissants
+	Oven
+	Rich Dough + Butter
+	Pie Dough
+	Mixer
+	Basic Dough + Butter
+	Cream Pie
+	Oven
+	Pie Dough + Whipped Cream
+	
+
+
+
+
+
+________________
+Tier 3
+Unlocked:
+   * Ship x10 Buttered Rolls 
+   * Ship x10 Croissants
+   * Ship x5 Cream Pies
+
+
+Building unlocks:
+   * Cutting Station
+
+Recipe unlocks: 
+   * Cut Biscuits 
+   * Biscuits 
+   * Sliced Bread 
+   * Toast 
+   * Buttered Toast
+
+
+
+
+Recipe
+	Building
+	Inputs
+	Cut Biscuits 
+	Cutting Station
+	Rich Dough
+	Biscuits 
+	Oven
+	Cut Biscuits 
+	Sliced Bread
+	Cutting Station
+	Bread 
+	Toast
+	Oven
+	Sliced Bread
+	Buttered Toast
+	Assembly Table
+	Sliced Bread + Butter
+	________________
+
+
+Tier 4
+Unlocked:
+   * Ship x15 Buttered Toast 
+   * Ship x20 Biscuits 
+
+
+Building unlocks:
+   * Sugar Source 
+
+Recipe unlocks: 
+   * Frosting
+   * Sweet Dough
+   * Sweet Rolls 
+   * Frosted Sweet Rolls 
+   * Cookie Cutouts
+   * Sugar Cookies 
+   * Frosted Sugar Cookies
+
+
+
+
+Recipe
+	Building
+	Inputs
+	Frosting 
+	Mixer
+	Butter + Sugar 
+	Sweet Dough
+	Mixer
+	Rich Dough + Sugar 
+	Sweet Rolls 
+	Oven 
+	Sweet Dough
+	Frosted Sweet Rolls 
+	Assembly Table
+	Sweet Rolls + Frosting
+	Cookie Cutouts 
+	Cutting Station
+	Sweet Dough
+	Sugar Cookies
+	Oven 
+	Cookie Cutouts 
+	Frosted Sugar Cookies
+	Assembly Table 
+	Sugar Cookies + Frosting
+	________________
+
+
+Tier 5
+Unlocked:
+   * Ship x25 Frosted Sugar Cookies
+   * Ship x25 Frosted Sweet Rolls  
+
+
+Building unlocks:
+   * Egg Source 
+
+Recipe unlocks: 
+   * Batter
+   * Cake Layer
+   * Frosted Cake
+   * Meringue
+   * Meringue Pie
+   * Danish 
+   * French Toast 
+
+
+
+
+Recipe
+	Building
+	Inputs
+	Batter
+	Mixer
+	Flour + Sugar + egg + Milk
+	Cake Layer
+	Oven
+	Batter
+	Frosted Cake
+	Assembly Table
+	Cake Layer + Whipped Cream + frosting
+	Meringue
+	Mixer
+	Egg + Sugar 
+	Meringue Pie 
+	Oven 
+	Pie dough + Meringue + Whipped Cream
+	Danish 
+	Oven 
+	Sweet Dough + egg
+	French Toast 
+	Oven
+	Toast + Egg + Milk 
+	________________
+
+
+Tier Winner 
+Unlocked:
+   * Ship x50 biscuits 
+   * Ship x20 frosted cakes
+   * Ship x20 meringue pie
+   * Ship x20 Danish
+   * Ship x20 french toast 
+________________
+
+
+Economy
+Balance Philosophy
+Money should rarely be the primary bottleneck. The intended progression is driven by recipe unlocks, factory throughput, and expanding the number of delivery cats rather than waiting to accumulate currency.
+Building Costs
+Milk Source            $20
+Flour Source          $25
+Butter Source         $30
+Sugar Source         $35
+Egg Source            $40
+
+
+Shipping Bin          $15
+Mixer                     $40
+Oven                     $60
+Assembly Table    $70
+Cutting Station      $55
+
+
+
+
+Starting Money 
+Enough for milk + mixer + shipping bin in tutorial 
+$75
+Estimated Money Growth rate per Tier (just reference)
+Tier 0: $95
+Tier 1: $200-$400
+Tier 2: $700-$1,200
+Tier 3 $1,800-$3,000
+Tier 4: $5,000 - $8,000
+Tier 5: $12,000 - $18,000
+Cat Adoption Costs
+First cat free with tutorial next 2 are cheap then slowly go up over time, not by a lot but make it so getting a ton of cats is possible but feels like a satisfying decision 
+
+
+Cat Number
+	Cost
+	1
+	Free
+	2
+	$10
+	3
+	$12
+	4
+	$15
+	5
+	$18
+	6
+	$20
+	7
+	$23
+	8
+	$25
+	9
+	$28
+	10
+	$30
+	11–15
+	$35 each
+	16–20
+	$40 each
+	21–30
+	$50 each
+	31–40
+	$60 each
+	41–50
+	$75 each
+	50+
+	$100 each
+	
+
+________________
+
+
+Shipped Goods Sell Costs
+Whipped Cream: $5
+Bread: $10
+Cream Bun: $20
+Bread Rolls: $18
+Butter Rolls: $26
+Croissants: $30
+Cream Pie: $36
+Biscuits: $32
+Buttered Toast: $30
+Frosted Sweet Rolls: $48
+Frosted Sugar Cookies: $52
+Frosted Cake: $80
+Meringue Pie:  $70
+Danish: $55
+French Toast: $50
+
+
+Recipe Costs to buy
+Whipped Cream: Free 
+Bread: $10
+Cream Bun: $40
+Bread Rolls: $60
+Butter Rolls: $75
+Croissants: $90
+Cream Pie: $100
+Biscuits: $110 
+Buttered Toast: $120
+Frosted Sweet Rolls: $160
+Frosted Sugar Cookies: $150
+Frosted Cake: $250
+Meringue Pie:  $220
+Danish: $200
+French Toast: $180
+
+
+
+
+
+
+
+
+________________
+
+
+When you purchase a recipe like above you unlock thes eintermediary steps as well 
+Unlock
+	Internally Unlocks
+	Bread
+	Basic Dough + Bread
+	Cream Bun
+	(just Cream Bun, since Bread is already unlocked)
+	Bread Rolls
+	Rich Dough + Bread Rolls
+	Butter Rolls
+	(just Butter Rolls) if Rich Dough already received 
+	Croissants
+	(just Croissants) if Rich Dough already received 
+	Cream Pie
+	Pie Dough + Cream Pie
+	Biscuits
+	Cut Biscuits + Biscuits
+	Buttered Toast
+	Sliced Bread + Toast + Buttered Toast
+	Frosted Sweet Rolls
+	Frosting + Sweet Dough + Sweet Rolls + Frosted Sweet Rolls
+	Frosted Sugar Cookies
+	Cookie Cutouts + Sugar Cookies + Frosted Sugar Cookies + Frosting (if not already received)
+	Frosted Cake
+	Batter + Cake Layer + Frosted Cake
+	Meringue Pie
+	Meringue + Meringue Pie
+	Danish
+	Danish
+	French Toast
+	French Toast

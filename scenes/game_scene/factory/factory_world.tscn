@@ -1,0 +1,354 @@
+[gd_scene format=3 uid="uid://ca3w56rgo50xx"]
+
+[ext_resource type="Script" uid="uid://cx23ddrh6fquw" path="res://scenes/game_scene/factory/factory_world.gd" id="0_factoryworld"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/camera_rig.tscn" id="1_camrig"]
+[ext_resource type="Texture2D" uid="uid://bfbpxfnwbtpn0" path="res://assets/sprites/tile2.0.png" id="2_1wrx1"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/grid/grid_manager.tscn" id="2_gridmgr"]
+[ext_resource type="Script" uid="uid://dxjqmerciq0jn" path="res://scenes/game_scene/factory/grid/grid_cursor.gd" id="3_gridcur"]
+[ext_resource type="Script" uid="uid://bgollab1co68d" path="res://scenes/game_scene/factory/buildings/building_placer.gd" id="4_placer"]
+[ext_resource type="Script" uid="uid://byuddkc0t0y00" path="res://scenes/game_scene/factory/buildings/recipe.gd" id="6_ujnb7"]
+[ext_resource type="Script" uid="uid://bqrjj4p5bj22g" path="res://scenes/game_scene/factory/economy.gd" id="10_econ"]
+[ext_resource type="Script" uid="uid://cyh0d64pfygbl" path="res://addons/maaacks_game_template/base/nodes/utilities/pause_menu_controller.gd" id="11_pausectl"]
+[ext_resource type="PackedScene" uid="uid://wm2nmhcpk5qp" path="res://scenes/windows/pause_menu_layer.tscn" id="12_pauselayer"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/ui/factory_hud.tscn" id="13_hud"]
+[ext_resource type="Script" uid="uid://cf6jafjm67plg" path="res://scenes/game_scene/factory/logistics/delivery_manager.gd" id="14_delivery"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/cats/cat.tscn" id="15_cat"]
+[ext_resource type="Script" uid="uid://b52wulkc8p0nr" path="res://scenes/game_scene/factory/cats/cat_shop.gd" id="16_catshop"]
+[ext_resource type="Script" uid="uid://mx2u54am1f4c" path="res://scenes/game_scene/factory/cats/cat_selector.gd" id="17_catselector"]
+[ext_resource type="Script" uid="uid://ck46navcpqhms" path="res://scenes/game_scene/factory/buildings/building_selector.gd" id="18_buildingselector"]
+[ext_resource type="Script" uid="uid://cd5x2gurojnwg" path="res://scenes/game_scene/factory/logistics/recipe_shop.gd" id="19_recipeshop"]
+[ext_resource type="Script" uid="uid://c5b5bdpewmhou" path="res://scenes/game_scene/factory/buildings/building_definition.gd" id="19_vjc5k"]
+[ext_resource type="Resource" path="res://resources/buildings/ingredient_source.tres" id="30_defsrc"]
+[ext_resource type="Resource" path="res://resources/buildings/butter_source.tres" id="31_defbutter"]
+[ext_resource type="Resource" uid="uid://dngm7dhyy1kmp" path="res://resources/buildings/mixer.tres" id="32_defmix"]
+[ext_resource type="Resource" uid="uid://n877gipjdmf3" path="res://resources/buildings/oven.tres" id="33_defoven"]
+[ext_resource type="Resource" uid="uid://cfdsn4peqk3hy" path="res://resources/buildings/shipping_bin.tres" id="34_defbin"]
+[ext_resource type="Resource" path="res://resources/buildings/egg_source.tres" id="35_defegg"]
+[ext_resource type="Script" uid="uid://buq1r82g3ugdu" path="res://scenes/game_scene/factory/buildings/building_ghost.gd" id="37_buildingghost"]
+[ext_resource type="Resource" uid="uid://uk2b48d63e77" path="res://resources/buildings/milk_source.tres" id="56_defmilk"]
+[ext_resource type="Resource" path="res://resources/buildings/sugar_source.tres" id="57_defsugar"]
+[ext_resource type="Resource" path="res://resources/buildings/prep_table.tres" id="58_defprep"]
+[ext_resource type="Resource" path="res://resources/buildings/decorating_table.tres" id="59_defdecorate"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/tutorial/tutorial_overlay.tscn" id="60_tutorialoverlay"]
+[ext_resource type="Script" uid="uid://c4w44yeooaojm" path="res://scenes/game_scene/factory/tutorial/tutorial_manager.gd" id="61_tutorialmgr"]
+[ext_resource type="Script" uid="uid://b3kbtddu1ir43" path="res://scenes/game_scene/factory/logistics/lifetime_stats.gd" id="62_lifetimestats"]
+[ext_resource type="Script" uid="uid://dnfkgffd5ktes" path="res://scenes/game_scene/factory/logistics/tier_manager.gd" id="63_tiermgr"]
+[ext_resource type="Resource" path="res://resources/recipes/whipped_cream.tres" id="70_whippedcream"]
+[ext_resource type="Resource" path="res://resources/recipes/basic_dough.tres" id="71_basicdough"]
+[ext_resource type="Resource" path="res://resources/recipes/bread.tres" id="72_bread"]
+[ext_resource type="Resource" path="res://resources/recipes/cream_bun.tres" id="73_creambun"]
+[ext_resource type="Resource" path="res://resources/recipes/rich_dough.tres" id="74_richdough"]
+[ext_resource type="Resource" path="res://resources/recipes/bread_roll.tres" id="75_breadroll"]
+[ext_resource type="Resource" path="res://resources/recipes/butter_roll.tres" id="76_butterroll"]
+[ext_resource type="Resource" path="res://resources/recipes/croissant.tres" id="77_croissant"]
+[ext_resource type="Resource" path="res://resources/recipes/pie_dough.tres" id="78_piedough"]
+[ext_resource type="Resource" path="res://resources/recipes/cream_pie.tres" id="79_creampie"]
+[ext_resource type="Resource" path="res://resources/recipes/cut_biscuit.tres" id="80_cutbiscuit"]
+[ext_resource type="Resource" path="res://resources/recipes/biscuit.tres" id="81_biscuit"]
+[ext_resource type="Resource" path="res://resources/recipes/sliced_bread.tres" id="82_slicedbread"]
+[ext_resource type="Resource" path="res://resources/recipes/toast.tres" id="83_toast"]
+[ext_resource type="Resource" path="res://resources/recipes/buttered_toast.tres" id="84_butteredtoast"]
+[ext_resource type="Resource" path="res://resources/recipes/frosting.tres" id="85_frosting"]
+[ext_resource type="Resource" path="res://resources/recipes/sweet_dough.tres" id="86_sweetdough"]
+[ext_resource type="Resource" path="res://resources/recipes/sweet_roll.tres" id="87_sweetroll"]
+[ext_resource type="Resource" path="res://resources/recipes/frosted_sweet_roll.tres" id="88_frostedsweetroll"]
+[ext_resource type="Resource" path="res://resources/recipes/cookie_cutout.tres" id="89_cookiecutout"]
+[ext_resource type="Resource" path="res://resources/recipes/sugar_cookie.tres" id="90_sugarcookie"]
+[ext_resource type="Resource" path="res://resources/recipes/frosted_sugar_cookie.tres" id="91_frostedsugarcookie"]
+[ext_resource type="Resource" uid="uid://cfmk1ie3yesry" path="res://resources/recipes/batter.tres" id="92_batter"]
+[ext_resource type="Resource" path="res://resources/recipes/cake_layer.tres" id="93_cakelayer"]
+[ext_resource type="Resource" path="res://resources/recipes/frosted_cake.tres" id="94_frostedcake"]
+[ext_resource type="Resource" path="res://resources/recipes/meringue.tres" id="95_meringue"]
+[ext_resource type="Resource" path="res://resources/recipes/meringue_pie.tres" id="96_meringuepie"]
+[ext_resource type="Resource" path="res://resources/recipes/danish.tres" id="97_danish"]
+[ext_resource type="Resource" path="res://resources/recipes/french_toast.tres" id="98_frenchtoast"]
+[ext_resource type="Script" uid="uid://c1ccvd76maee2" path="res://scenes/game_scene/factory/cats/cat_placer.gd" id="99_catplacer"]
+[ext_resource type="Script" uid="uid://uw33v41m3j87" path="res://scenes/game_scene/factory/buildings/building_mover.gd" id="100_buildingmover"]
+[ext_resource type="Script" uid="uid://chgjodegc7ekc" path="res://scenes/game_scene/factory/grid/factory_bounds.gd" id="101_factorybounds"]
+[ext_resource type="Script" uid="uid://cqepnkimtnab1" path="res://scenes/game_scene/factory/grid/factory_bounds_visual.gd" id="102_factoryboundsvisual"]
+[ext_resource type="Texture2D" path="res://assets/sprites/grass-texture.png" id="103_grass"]
+[ext_resource type="Texture2D" path="res://assets/sprites/pink-brick.png" id="104_pinkbrick"]
+[ext_resource type="Texture2D" path="res://assets/sprites/blue-brick.png" id="105_bluebrick"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/victory_sequence.tscn" id="106_victory"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/opening_sequence.tscn" id="107_opening"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/hover_highlight.gd" id="108_hoverhighlight"]
+
+[sub_resource type="StandardMaterial3D" id="mat_ground"]
+albedo_color = Color(0.42, 0.62, 0.32, 1)
+albedo_texture = ExtResource("103_grass")
+texture_filter = 2
+uv1_scale = Vector3(500, 500, 500)
+
+[sub_resource type="PlaneMesh" id="mesh_ground"]
+material = SubResource("mat_ground")
+size = Vector2(2000, 2000)
+
+[sub_resource type="ProceduralSkyMaterial" id="mat_sky"]
+sky_top_color = Color(0.55, 0.71, 0.92, 1)
+sky_horizon_color = Color(0.89, 0.85, 0.8, 1)
+ground_horizon_color = Color(0.89, 0.85, 0.8, 1)
+
+[sub_resource type="Sky" id="sky_main"]
+sky_material = SubResource("mat_sky")
+
+[sub_resource type="Environment" id="env_main"]
+background_mode = 2
+sky = SubResource("sky_main")
+ambient_light_source = 3
+
+[node name="FactoryWorld" type="Node3D" unique_id=1762843580 node_paths=PackedStringArray("economy", "tier_manager", "recipe_shop", "lifetime_stats", "buildings_root", "cats_root", "grid_manager", "factory_bounds", "building_placer", "cat_shop", "tutorial_manager", "factory_hud", "victory_sequence", "opening_sequence")]
+script = ExtResource("0_factoryworld")
+economy = NodePath("Economy")
+tier_manager = NodePath("TierManager")
+recipe_shop = NodePath("RecipeShop")
+lifetime_stats = NodePath("LifetimeStats")
+buildings_root = NodePath("Buildings")
+cats_root = NodePath("Cats")
+grid_manager = NodePath("GridManager")
+factory_bounds = NodePath("FactoryBounds")
+building_placer = NodePath("BuildingPlacer")
+cat_shop = NodePath("CatShop")
+tutorial_manager = NodePath("TutorialManager")
+factory_hud = NodePath("FactoryHud")
+victory_sequence = NodePath("VictorySequence")
+opening_sequence = NodePath("OpeningSequence")
+
+[node name="Ground" type="MeshInstance3D" parent="." unique_id=763084903]
+mesh = SubResource("mesh_ground")
+
+[node name="SunLight" type="DirectionalLight3D" parent="." unique_id=816831124]
+transform = Transform3D(0.8660248, 0.40956798, -0.28680158, 0, 0.5736019, 0.81913424, 0.5000011, -0.7093906, 0.49675345, 0, 30, 0)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=835878834]
+environment = SubResource("env_main")
+
+[node name="GridManager" parent="." unique_id=1379620168 instance=ExtResource("2_gridmgr")]
+
+[node name="FactoryBounds" type="Node" parent="." unique_id=2100000008 node_paths=PackedStringArray("grid_manager", "economy")]
+script = ExtResource("101_factorybounds")
+grid_manager = NodePath("../GridManager")
+economy = NodePath("../Economy")
+
+[node name="FactoryBoundsVisual" type="Node3D" parent="." unique_id=2100000009 node_paths=PackedStringArray("factory_bounds")]
+script = ExtResource("102_factoryboundsvisual")
+factory_bounds = NodePath("../FactoryBounds")
+floor_texture = ExtResource("2_1wrx1")
+inner_wall_texture = ExtResource("105_bluebrick")
+outer_wall_texture = ExtResource("104_pinkbrick")
+
+[node name="GridCursor" type="Node3D" parent="." unique_id=27358190 node_paths=PackedStringArray("grid_manager")]
+script = ExtResource("3_gridcur")
+grid_manager = NodePath("../GridManager")
+
+[node name="BuildingGhost" type="Node3D" parent="." unique_id=2100000001 node_paths=PackedStringArray("grid_manager", "grid_cursor", "placer", "mover")]
+script = ExtResource("37_buildingghost")
+grid_manager = NodePath("../GridManager")
+grid_cursor = NodePath("../GridCursor")
+placer = NodePath("../BuildingPlacer")
+mover = NodePath("../BuildingMover")
+
+[node name="Buildings" type="Node3D" parent="." unique_id=1856343072]
+
+[node name="Cats" type="Node3D" parent="." unique_id=1856343073]
+
+[node name="Cat1" parent="Cats" unique_id=645024124 node_paths=PackedStringArray("delivery_manager", "grid_manager") instance=ExtResource("15_cat")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 3)
+delivery_manager = NodePath("../../DeliveryManager")
+grid_manager = NodePath("../../GridManager")
+cat_name = "Newby"
+
+[node name="Economy" type="Node" parent="." unique_id=2125011737]
+script = ExtResource("10_econ")
+
+[node name="LifetimeStats" type="Node" parent="." unique_id=2100000004]
+script = ExtResource("62_lifetimestats")
+
+[node name="TierManager" type="Node" parent="." unique_id=2100000005 node_paths=PackedStringArray("lifetime_stats", "economy")]
+script = ExtResource("63_tiermgr")
+lifetime_stats = NodePath("../LifetimeStats")
+economy = NodePath("../Economy")
+building_tiers = Dictionary[ExtResource("19_vjc5k"), int]({
+ExtResource("30_defsrc"): 1,
+ExtResource("33_defoven"): 1,
+ExtResource("59_defdecorate"): 1,
+ExtResource("31_defbutter"): 2,
+ExtResource("58_defprep"): 3,
+ExtResource("57_defsugar"): 4,
+ExtResource("35_defegg"): 5
+})
+recipe_tiers = Dictionary[ExtResource("6_ujnb7"), int]({
+ExtResource("98_frenchtoast"): 5,
+ExtResource("97_danish"): 5,
+ExtResource("96_meringuepie"): 5,
+ExtResource("95_meringue"): 5,
+ExtResource("94_frostedcake"): 5,
+ExtResource("93_cakelayer"): 5,
+ExtResource("92_batter"): 5,
+ExtResource("91_frostedsugarcookie"): 4,
+ExtResource("90_sugarcookie"): 4,
+ExtResource("89_cookiecutout"): 4,
+ExtResource("88_frostedsweetroll"): 4,
+ExtResource("87_sweetroll"): 4,
+ExtResource("86_sweetdough"): 4,
+ExtResource("85_frosting"): 4,
+ExtResource("84_butteredtoast"): 3,
+ExtResource("83_toast"): 3,
+ExtResource("82_slicedbread"): 3,
+ExtResource("81_biscuit"): 3,
+ExtResource("80_cutbiscuit"): 3,
+ExtResource("79_creampie"): 2,
+ExtResource("78_piedough"): 2,
+ExtResource("77_croissant"): 2,
+ExtResource("76_butterroll"): 2,
+ExtResource("75_breadroll"): 2,
+ExtResource("74_richdough"): 2,
+ExtResource("73_creambun"): 1,
+ExtResource("72_bread"): 1,
+ExtResource("71_basicdough"): 1
+})
+item_tiers = Dictionary[StringName, int]({
+&"biscuit": 3,
+&"bread": 1,
+&"bread_roll": 2,
+&"butter_roll": 2,
+&"buttered_toast": 3,
+&"cream_bun": 1,
+&"cream_pie": 2,
+&"croissant": 2,
+&"danish": 5,
+&"french_toast": 5,
+&"frosted_cake": 5,
+&"frosted_sugar_cookie": 4,
+&"frosted_sweet_roll": 4,
+&"meringue_pie": 5
+})
+
+[node name="RecipeShop" type="Node" parent="." unique_id=1055033414 node_paths=PackedStringArray("economy")]
+script = ExtResource("19_recipeshop")
+economy = NodePath("../Economy")
+default_unlocked = Array[ExtResource("6_ujnb7")]([ExtResource("70_whippedcream")])
+shop_prices = Dictionary[ExtResource("6_ujnb7"), int]({
+ExtResource("72_bread"): 10,
+ExtResource("73_creambun"): 40,
+ExtResource("75_breadroll"): 60,
+ExtResource("76_butterroll"): 75,
+ExtResource("77_croissant"): 90,
+ExtResource("79_creampie"): 100,
+ExtResource("81_biscuit"): 110,
+ExtResource("84_butteredtoast"): 120,
+ExtResource("91_frostedsugarcookie"): 150,
+ExtResource("88_frostedsweetroll"): 160,
+ExtResource("97_danish"): 200,
+ExtResource("98_frenchtoast"): 180,
+ExtResource("96_meringuepie"): 220,
+ExtResource("94_frostedcake"): 250
+})
+
+[node name="DeliveryManager" type="Node" parent="." unique_id=1442357268 node_paths=PackedStringArray("buildings_root", "cats_root", "lifetime_stats")]
+script = ExtResource("14_delivery")
+buildings_root = NodePath("../Buildings")
+cats_root = NodePath("../Cats")
+lifetime_stats = NodePath("../LifetimeStats")
+
+[node name="CatShop" type="Node" parent="." unique_id=475962782 node_paths=PackedStringArray("cats_root", "economy", "grid_manager", "delivery_manager", "lifetime_stats")]
+script = ExtResource("16_catshop")
+cat_scene = ExtResource("15_cat")
+cats_root = NodePath("../Cats")
+economy = NodePath("../Economy")
+grid_manager = NodePath("../GridManager")
+delivery_manager = NodePath("../DeliveryManager")
+lifetime_stats = NodePath("../LifetimeStats")
+
+[node name="PauseMenuController" type="Node" parent="." unique_id=1470516471]
+script = ExtResource("11_pausectl")
+pause_menu_packed = ExtResource("12_pauselayer")
+
+[node name="CameraRig" parent="." unique_id=2072831799 node_paths=PackedStringArray("factory_bounds", "grid_manager") instance=ExtResource("1_camrig")]
+factory_bounds = NodePath("../FactoryBounds")
+grid_manager = NodePath("../GridManager")
+
+[node name="BuildingPlacer" type="Node" parent="." unique_id=194494227 node_paths=PackedStringArray("grid_manager", "grid_cursor", "economy", "factory_bounds", "lifetime_stats", "recipe_shop", "buildings_root", "tier_manager")]
+script = ExtResource("4_placer")
+building_definitions = Array[ExtResource("19_vjc5k")]([ExtResource("56_defmilk"), ExtResource("30_defsrc"), ExtResource("31_defbutter"), ExtResource("35_defegg"), ExtResource("57_defsugar"), ExtResource("32_defmix"), ExtResource("58_defprep"), ExtResource("33_defoven"), ExtResource("59_defdecorate"), ExtResource("34_defbin")])
+grid_manager = NodePath("../GridManager")
+grid_cursor = NodePath("../GridCursor")
+economy = NodePath("../Economy")
+factory_bounds = NodePath("../FactoryBounds")
+lifetime_stats = NodePath("../LifetimeStats")
+recipe_shop = NodePath("../RecipeShop")
+buildings_root = NodePath("../Buildings")
+tier_manager = NodePath("../TierManager")
+
+[node name="FactoryHud" parent="." unique_id=501237387 node_paths=PackedStringArray("placer", "economy", "delivery_manager", "cat_shop", "cat_placer", "cat_selector", "building_selector", "building_mover", "factory_bounds", "recipe_shop", "tier_manager", "pause_controller") instance=ExtResource("13_hud")]
+placer = NodePath("../BuildingPlacer")
+economy = NodePath("../Economy")
+delivery_manager = NodePath("../DeliveryManager")
+cat_shop = NodePath("../CatShop")
+cat_placer = NodePath("../CatPlacer")
+cat_selector = NodePath("../CatSelector")
+building_selector = NodePath("../BuildingSelector")
+building_mover = NodePath("../BuildingMover")
+factory_bounds = NodePath("../FactoryBounds")
+recipe_shop = NodePath("../RecipeShop")
+tier_manager = NodePath("../TierManager")
+pause_controller = NodePath("../PauseMenuController")
+
+[node name="BuildingSelector" type="Node" parent="." unique_id=-1607515393 node_paths=PackedStringArray("grid_cursor", "grid_manager", "placer")]
+script = ExtResource("18_buildingselector")
+grid_cursor = NodePath("../GridCursor")
+grid_manager = NodePath("../GridManager")
+placer = NodePath("../BuildingPlacer")
+
+[node name="CatSelector" type="Node" parent="." unique_id=1299935152 node_paths=PackedStringArray("grid_cursor", "placer", "cats_root")]
+script = ExtResource("17_catselector")
+grid_cursor = NodePath("../GridCursor")
+placer = NodePath("../BuildingPlacer")
+cats_root = NodePath("../Cats")
+
+[node name="HoverHighlight" type="Node" parent="." unique_id=2100000012 node_paths=PackedStringArray("cat_selector", "grid_cursor", "grid_manager", "placer")]
+script = ExtResource("108_hoverhighlight")
+cat_selector = NodePath("../CatSelector")
+grid_cursor = NodePath("../GridCursor")
+grid_manager = NodePath("../GridManager")
+placer = NodePath("../BuildingPlacer")
+
+[node name="CatPlacer" type="Node3D" parent="." unique_id=2100000006 node_paths=PackedStringArray("grid_cursor", "cat_shop", "building_placer")]
+script = ExtResource("99_catplacer")
+grid_cursor = NodePath("../GridCursor")
+cat_shop = NodePath("../CatShop")
+building_placer = NodePath("../BuildingPlacer")
+
+[node name="BuildingMover" type="Node" parent="." unique_id=2100000007 node_paths=PackedStringArray("grid_manager", "grid_cursor", "buildings_root", "building_placer", "factory_bounds")]
+script = ExtResource("100_buildingmover")
+grid_manager = NodePath("../GridManager")
+grid_cursor = NodePath("../GridCursor")
+buildings_root = NodePath("../Buildings")
+building_placer = NodePath("../BuildingPlacer")
+factory_bounds = NodePath("../FactoryBounds")
+
+[node name="TutorialOverlay" parent="." unique_id=2100000002 instance=ExtResource("60_tutorialoverlay")]
+
+[node name="TutorialManager" type="Node" parent="." unique_id=2100000003 node_paths=PackedStringArray("overlay", "factory_hud", "buildings_root", "cats_root", "economy", "recipe_shop", "tier_manager")]
+script = ExtResource("61_tutorialmgr")
+overlay = NodePath("../TutorialOverlay")
+factory_hud = NodePath("../FactoryHud")
+buildings_root = NodePath("../Buildings")
+cats_root = NodePath("../Cats")
+economy = NodePath("../Economy")
+recipe_shop = NodePath("../RecipeShop")
+tier_manager = NodePath("../TierManager")
+
+[node name="VictorySequence" parent="." unique_id=2100000010 node_paths=PackedStringArray("camera_rig", "factory_hud", "factory_bounds", "lifetime_stats", "recipe_shop", "tier_manager", "cats_root") instance=ExtResource("106_victory")]
+camera_rig = NodePath("../CameraRig")
+factory_hud = NodePath("../FactoryHud")
+factory_bounds = NodePath("../FactoryBounds")
+lifetime_stats = NodePath("../LifetimeStats")
+recipe_shop = NodePath("../RecipeShop")
+tier_manager = NodePath("../TierManager")
+cats_root = NodePath("../Cats")
+
+[node name="OpeningSequence" parent="." unique_id=2100000011 node_paths=PackedStringArray("camera_rig", "factory_hud", "cats_root", "tutorial_overlay") instance=ExtResource("107_opening")]
+camera_rig = NodePath("../CameraRig")
+factory_hud = NodePath("../FactoryHud")
+cats_root = NodePath("../Cats")
+tutorial_overlay = NodePath("../TutorialOverlay")

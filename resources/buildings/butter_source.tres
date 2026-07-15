@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BuildingDefinition" format=3 uid="uid://cm5ulj4bnlgyh"]
+
+[ext_resource type="Script" uid="uid://c5b5bdpewmhou" path="res://scenes/game_scene/factory/buildings/building_definition.gd" id="1_def"]
+[ext_resource type="PackedScene" path="res://scenes/game_scene/factory/buildings/ingredient_source.tscn" id="2_scene"]
+[ext_resource type="Texture2D" uid="uid://c8i1axiyh6hjn" path="res://assets/sprites/buildings/butter_source.png" id="3_icon"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Butter Source"
+description = "Produces butter automatically over time — no cat required, just collect it before it piles up."
+icon = ExtResource("3_icon")
+icon_pixel_size = 0.021739
+cost = 30
+outputs = Array[StringName]([&"butter"])
+input_capacity = 0
+output_capacity = 5
+scene = ExtResource("2_scene")
