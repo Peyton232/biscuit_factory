@@ -91,9 +91,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		_dragging = false
 	elif event is InputEventMouseMotion and _dragging:
 		# Keep the ground point that was grabbed pinned under the cursor.
-		var before := _ground_point(event.position - event.relative)
-		var after := _ground_point(event.position)
-		_target_position += before - after
+		# **Skipped entirely when either sample is too close to the horizon
+		# (✅ fixed — reported as the camera "freaking out" on a held,
+		# dragged click)** — see _is_ground_ray_safe()'s own doc comment;
+		# a dragging mouse's reported position isn't clamped to the
+		# viewport, so it's easy to cross into unsafe territory the longer
+		# a drag runs.
+		if _is_ground_ray_safe(event.position - event.relative) and _is_ground_ray_safe(event.position):
+			var before := _ground_point(event.position - event.relative)
+			var after := _ground_point(event.position)
+			_target_position += before - after
 
 
 func _process(delta: float) -> void:
@@ -159,11 +166,42 @@ func _clamp_target_position() -> void:
 	_target_position.z = clampf(_target_position.z, corner.z - pan_margin, corner.z + size.y + pan_margin)
 
 
-## Projects a screen position onto the ground plane (y = 0).
+## Projects a screen position onto the ground plane (y = 0). **Only
+## meaningful for a ray pointed steeply enough downward — see
+## _is_ground_ray_safe()** — origin.y / direction.y blows up toward
+## infinity as the ray's downward angle approaches the horizon
+## (direction.y -> 0), and returns a nonsense point entirely for a ray
+## pointed above it (direction.y > 0, reachable since the camera's
+## fixed downward pitch still leaves a shallow margin at the very top of
+## the viewport — see pitch_degrees). Callers must check
+## _is_ground_ray_safe(screen_pos) first; this function itself doesn't
+## guard, so it can't silently paper over a caller that forgot to.
 func _ground_point(screen_pos: Vector2) -> Vector3:
 	var origin := _camera.project_ray_origin(screen_pos)
 	var direction := _camera.project_ray_normal(screen_pos)
 	return origin - direction * (origin.y / direction.y)
+
+
+## Shallowest allowed downward ray angle before _ground_point() is
+## considered unsafe to call, expressed as the ray direction's own
+## (normalized) Y component — 0 is exactly horizontal, -1 is straight
+## down, so this is "at least this many meters of downward component per
+## meter of ray length." **Not just a defensive check for an
+## unreachable edge case (✅ fixed — reported as the camera "freaking
+## out" after a click-and-hold drag)** — Godot doesn't clamp a captured
+## mouse-motion event's position to the viewport rect, so a real,
+## ordinary drag (the cursor drifting toward/past the top edge of the
+## window, easy to do the longer a drag runs) can hand _ground_point() a
+## ray shallow enough to explode the resulting point to somewhere far
+## outside the factory, or even past the horizon into a nonsense
+## opposite-direction point. 0.2 is a first-pass value — steep enough to
+## rule out the explosive region, shallow enough that it only kicks in
+## right at the extreme edge of the screen, not during ordinary panning.
+const _MIN_GROUND_RAY_STEEPNESS: float = 0.2
+
+
+func _is_ground_ray_safe(screen_pos: Vector2) -> bool:
+	return _camera.project_ray_normal(screen_pos).y <= -_MIN_GROUND_RAY_STEEPNESS
 
 
 ## True while a text field (naming a cat, etc.) has keyboard focus.

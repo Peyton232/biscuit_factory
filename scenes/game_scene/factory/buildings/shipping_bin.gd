@@ -148,11 +148,21 @@ func _process(delta: float) -> void:
 	_timer += delta
 	if _timer < ship_interval:
 		return
-	# Scans every sell_prices item, not just currently-accepted ones —
-	# toggling an item off stops NEW deliveries of it (see
-	# current_inputs()), but shouldn't strand whatever's already sitting
-	# in the inventory from before it was turned off.
+	# **Only ships currently-accepted items (✅ fixed — reported as "a
+	# player deselected Whipped Cream but it still got shipped")** — used
+	# to scan every sell_prices item regardless of _accepted, so it could
+	# still sell an item the player had just unchecked, either because it
+	# was already sitting in the inventory before the toggle or because a
+	# delivery already in flight at toggle time (wants_item() caps each
+	# input at 1, so this is at most a single stray unit — see Building.
+	# wants_item()) landed moments later. That old behavior was meant to
+	# avoid stranding pre-existing stock, but "the checkbox says off and
+	# it sold anyway" reads as broken to a player, not as a kindness — an
+	# already-there deselected item now just waits, unshipped, until
+	# re-accepted (or Select All).
 	for item: StringName in sell_prices:
+		if not is_accepted(item):
+			continue
 		if input_inventory.remove(item):
 			_ship(item)
 			_timer = 0.0

@@ -18,17 +18,17 @@
 [ext_resource type="Script" uid="uid://ck46navcpqhms" path="res://scenes/game_scene/factory/buildings/building_selector.gd" id="18_buildingselector"]
 [ext_resource type="Script" uid="uid://cd5x2gurojnwg" path="res://scenes/game_scene/factory/logistics/recipe_shop.gd" id="19_recipeshop"]
 [ext_resource type="Script" uid="uid://c5b5bdpewmhou" path="res://scenes/game_scene/factory/buildings/building_definition.gd" id="19_vjc5k"]
-[ext_resource type="Resource" path="res://resources/buildings/ingredient_source.tres" id="30_defsrc"]
-[ext_resource type="Resource" path="res://resources/buildings/butter_source.tres" id="31_defbutter"]
+[ext_resource type="Resource" uid="uid://b66di4s710dhk" path="res://resources/buildings/ingredient_source.tres" id="30_defsrc"]
+[ext_resource type="Resource" uid="uid://cm5ulj4bnlgyh" path="res://resources/buildings/butter_source.tres" id="31_defbutter"]
 [ext_resource type="Resource" uid="uid://dngm7dhyy1kmp" path="res://resources/buildings/mixer.tres" id="32_defmix"]
 [ext_resource type="Resource" uid="uid://n877gipjdmf3" path="res://resources/buildings/oven.tres" id="33_defoven"]
 [ext_resource type="Resource" uid="uid://cfdsn4peqk3hy" path="res://resources/buildings/shipping_bin.tres" id="34_defbin"]
-[ext_resource type="Resource" path="res://resources/buildings/egg_source.tres" id="35_defegg"]
+[ext_resource type="Resource" uid="uid://c8deuetaemdpe" path="res://resources/buildings/egg_source.tres" id="35_defegg"]
 [ext_resource type="Script" uid="uid://buq1r82g3ugdu" path="res://scenes/game_scene/factory/buildings/building_ghost.gd" id="37_buildingghost"]
 [ext_resource type="Resource" uid="uid://uk2b48d63e77" path="res://resources/buildings/milk_source.tres" id="56_defmilk"]
-[ext_resource type="Resource" path="res://resources/buildings/sugar_source.tres" id="57_defsugar"]
-[ext_resource type="Resource" path="res://resources/buildings/prep_table.tres" id="58_defprep"]
-[ext_resource type="Resource" path="res://resources/buildings/decorating_table.tres" id="59_defdecorate"]
+[ext_resource type="Resource" uid="uid://gvyc2r8kqsbw" path="res://resources/buildings/sugar_source.tres" id="57_defsugar"]
+[ext_resource type="Resource" uid="uid://dww21hqv1bact" path="res://resources/buildings/prep_table.tres" id="58_defprep"]
+[ext_resource type="Resource" uid="uid://dujbxyabsv5ns" path="res://resources/buildings/decorating_table.tres" id="59_defdecorate"]
 [ext_resource type="PackedScene" path="res://scenes/game_scene/factory/tutorial/tutorial_overlay.tscn" id="60_tutorialoverlay"]
 [ext_resource type="Script" uid="uid://c4w44yeooaojm" path="res://scenes/game_scene/factory/tutorial/tutorial_manager.gd" id="61_tutorialmgr"]
 [ext_resource type="Script" uid="uid://b3kbtddu1ir43" path="res://scenes/game_scene/factory/logistics/lifetime_stats.gd" id="62_lifetimestats"]
@@ -60,24 +60,31 @@
 [ext_resource type="Resource" path="res://resources/recipes/frosted_cake.tres" id="94_frostedcake"]
 [ext_resource type="Resource" path="res://resources/recipes/meringue.tres" id="95_meringue"]
 [ext_resource type="Resource" path="res://resources/recipes/meringue_pie.tres" id="96_meringuepie"]
-[ext_resource type="Resource" path="res://resources/recipes/danish.tres" id="97_danish"]
+[ext_resource type="Resource" uid="uid://o0qg8tf22weu" path="res://resources/recipes/danish.tres" id="97_danish"]
 [ext_resource type="Resource" path="res://resources/recipes/french_toast.tres" id="98_frenchtoast"]
 [ext_resource type="Script" uid="uid://c1ccvd76maee2" path="res://scenes/game_scene/factory/cats/cat_placer.gd" id="99_catplacer"]
 [ext_resource type="Script" uid="uid://uw33v41m3j87" path="res://scenes/game_scene/factory/buildings/building_mover.gd" id="100_buildingmover"]
 [ext_resource type="Script" uid="uid://chgjodegc7ekc" path="res://scenes/game_scene/factory/grid/factory_bounds.gd" id="101_factorybounds"]
 [ext_resource type="Script" uid="uid://cqepnkimtnab1" path="res://scenes/game_scene/factory/grid/factory_bounds_visual.gd" id="102_factoryboundsvisual"]
-[ext_resource type="Texture2D" path="res://assets/sprites/grass-texture.png" id="103_grass"]
-[ext_resource type="Texture2D" path="res://assets/sprites/pink-brick.png" id="104_pinkbrick"]
-[ext_resource type="Texture2D" path="res://assets/sprites/blue-brick.png" id="105_bluebrick"]
+[ext_resource type="Texture2D" uid="uid://bd3ieebgqms42" path="res://assets/sprites/grass-texture.png" id="103_grass"]
+[ext_resource type="Texture2D" uid="uid://bdyg64a1dq2c" path="res://assets/sprites/pink-brick.png" id="104_pinkbrick"]
+[ext_resource type="Texture2D" uid="uid://dif8g1hro5mkq" path="res://assets/sprites/blue-brick.png" id="105_bluebrick"]
 [ext_resource type="PackedScene" path="res://scenes/game_scene/factory/victory_sequence.tscn" id="106_victory"]
 [ext_resource type="PackedScene" path="res://scenes/game_scene/factory/opening_sequence.tscn" id="107_opening"]
-[ext_resource type="Script" path="res://scenes/game_scene/factory/ui/hover_highlight.gd" id="108_hoverhighlight"]
+[ext_resource type="Script" uid="uid://bm1wp6587ywvw" path="res://scenes/game_scene/factory/ui/hover_highlight.gd" id="108_hoverhighlight"]
+[ext_resource type="Script" uid="uid://bxgu6qjg01ytw" path="res://scenes/game_scene/factory/music/tier_music_controller.gd" id="109_tiermusic"]
+[ext_resource type="AudioStream" uid="uid://cfuenneddirkm" path="res://assets/sounds/music/tier-0.wav" id="110_tier0music"]
+[ext_resource type="AudioStream" uid="uid://crfpk1dwiwhlg" path="res://assets/sounds/music/tier-1.wav" id="111_tier1music"]
+[ext_resource type="AudioStream" uid="uid://b1ejl0xckq8yc" path="res://assets/sounds/music/tier-2.wav" id="112_tier2music"]
+[ext_resource type="AudioStream" uid="uid://d1fwopqih5g2w" path="res://assets/sounds/music/tier-3.wav" id="113_tier3music"]
+[ext_resource type="AudioStream" uid="uid://d2bujnpn3tw7q" path="res://assets/sounds/music/tier-4.wav" id="114_tier4music"]
+[ext_resource type="AudioStream" uid="uid://b8y27nbijyoyi" path="res://assets/sounds/music/tier-5.wav" id="115_tier5music"]
 
 [sub_resource type="StandardMaterial3D" id="mat_ground"]
-albedo_color = Color(0.42, 0.62, 0.32, 1)
+albedo_color = Color(0.5529412, 0.6392157, 0.5647059, 0)
 albedo_texture = ExtResource("103_grass")
-texture_filter = 2
 uv1_scale = Vector3(500, 500, 500)
+texture_filter = 2
 
 [sub_resource type="PlaneMesh" id="mesh_ground"]
 material = SubResource("mat_ground")
@@ -96,7 +103,7 @@ background_mode = 2
 sky = SubResource("sky_main")
 ambient_light_source = 3
 
-[node name="FactoryWorld" type="Node3D" unique_id=1762843580 node_paths=PackedStringArray("economy", "tier_manager", "recipe_shop", "lifetime_stats", "buildings_root", "cats_root", "grid_manager", "factory_bounds", "building_placer", "cat_shop", "tutorial_manager", "factory_hud", "victory_sequence", "opening_sequence")]
+[node name="FactoryWorld" type="Node3D" unique_id=1762843580 node_paths=PackedStringArray("economy", "tier_manager", "recipe_shop", "lifetime_stats", "buildings_root", "cats_root", "grid_manager", "factory_bounds", "building_placer", "cat_shop", "tutorial_manager", "factory_hud", "victory_sequence", "opening_sequence", "tier_music_controller")]
 script = ExtResource("0_factoryworld")
 economy = NodePath("Economy")
 tier_manager = NodePath("TierManager")
@@ -112,6 +119,7 @@ tutorial_manager = NodePath("TutorialManager")
 factory_hud = NodePath("FactoryHud")
 victory_sequence = NodePath("VictorySequence")
 opening_sequence = NodePath("OpeningSequence")
+tier_music_controller = NodePath("TierMusicController")
 
 [node name="Ground" type="MeshInstance3D" parent="." unique_id=763084903]
 mesh = SubResource("mesh_ground")
@@ -162,6 +170,11 @@ script = ExtResource("10_econ")
 
 [node name="LifetimeStats" type="Node" parent="." unique_id=2100000004]
 script = ExtResource("62_lifetimestats")
+
+[node name="TierMusicController" type="Node" parent="." unique_id=2100000013 node_paths=PackedStringArray("tier_manager")]
+script = ExtResource("109_tiermusic")
+tracks = Array[AudioStream]([ExtResource("110_tier0music"), ExtResource("111_tier1music"), ExtResource("112_tier2music"), ExtResource("113_tier3music"), ExtResource("114_tier4music"), ExtResource("115_tier5music")])
+tier_manager = NodePath("../TierManager")
 
 [node name="TierManager" type="Node" parent="." unique_id=2100000005 node_paths=PackedStringArray("lifetime_stats", "economy")]
 script = ExtResource("63_tiermgr")
@@ -338,15 +351,15 @@ economy = NodePath("../Economy")
 recipe_shop = NodePath("../RecipeShop")
 tier_manager = NodePath("../TierManager")
 
-[node name="VictorySequence" parent="." unique_id=2100000010 node_paths=PackedStringArray("camera_rig", "factory_hud", "factory_bounds", "lifetime_stats", "recipe_shop", "tier_manager", "cats_root", "buildings_root") instance=ExtResource("106_victory")]
+[node name="VictorySequence" parent="." unique_id=2100000010 node_paths=PackedStringArray("camera_rig", "factory_hud", "factory_bounds", "lifetime_stats", "recipe_shop", "tier_manager", "buildings_root", "cats_root") instance=ExtResource("106_victory")]
 camera_rig = NodePath("../CameraRig")
 factory_hud = NodePath("../FactoryHud")
 factory_bounds = NodePath("../FactoryBounds")
 lifetime_stats = NodePath("../LifetimeStats")
 recipe_shop = NodePath("../RecipeShop")
 tier_manager = NodePath("../TierManager")
-cats_root = NodePath("../Cats")
 buildings_root = NodePath("../Buildings")
+cats_root = NodePath("../Cats")
 
 [node name="OpeningSequence" parent="." unique_id=2100000011 node_paths=PackedStringArray("camera_rig", "factory_hud", "cats_root", "tutorial_overlay") instance=ExtResource("107_opening")]
 camera_rig = NodePath("../CameraRig")

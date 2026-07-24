@@ -87,14 +87,20 @@ const _RECIPES_ICON: Texture2D = preload("res://assets/UI/recipeicon.jpeg")
 const _DEMOLISH_ICON: Texture2D = preload("res://assets/UI/demolishicon.jpeg")
 ## Swapped in globally (Input.set_custom_mouse_cursor) while the player is
 ## actively carrying a cat or relocating a building — see _update_cursor().
-## _CURSOR_NORMAL/_CURSOR_NORMAL_HOTSPOT duplicate project.godot's own
-## mouse_cursor/custom_image(_hotspot) values, since reverting away from a
+## _CURSOR_NORMAL/_CURSOR_NORMAL_HOTSPOT duplicate the same texture/hotspot
+## MainMenuWithAnimations applies once the title screen first appears (✅
+## 2026-07-15 — no longer a project.godot mouse_cursor/custom_image setting,
+## see that script's own doc comment for why), since reverting away from a
 ## custom cursor requires re-setting the original one explicitly (passing
-## null clears back to the bare OS pointer, not to the project's default).
+## null clears back to the bare OS pointer, not back to this game's own).
+## Both cursor.png/cursor pinch.png were shrunk 50x50 -> 36x36 (✅
+## 2026-07-15, "make the cursor a little smaller") — hotspots below are
+## scaled by the same 36/50 factor to stay pinned to the same visual
+## point on the art (the fingertip/pinch point), not just the top-left.
 const _CURSOR_NORMAL: Texture2D = preload("res://assets/UI/cursor.png")
-const _CURSOR_NORMAL_HOTSPOT := Vector2(2, 0)
+const _CURSOR_NORMAL_HOTSPOT := Vector2(1, 0)
 const _CURSOR_PINCH: Texture2D = preload("res://assets/UI/cursor pinch.png")
-const _CURSOR_PINCH_HOTSPOT := Vector2(22, 8)
+const _CURSOR_PINCH_HOTSPOT := Vector2(16, 6)
 ## Pause/Settings top-right icon buttons — PNG, not JPEG (real alpha
 ## backgrounds, unlike the square opaque bottom-bar icons above), built
 ## the same way via _make_icon_button() (see _populate_top_right()).
@@ -508,6 +514,14 @@ func _update_cursor() -> void:
 		Input.set_custom_mouse_cursor(_CURSOR_PINCH, Input.CURSOR_ARROW, _CURSOR_PINCH_HOTSPOT)
 	else:
 		Input.set_custom_mouse_cursor(_CURSOR_NORMAL, Input.CURSOR_ARROW, _CURSOR_NORMAL_HOTSPOT)
+	# Known Godot engine limitation: set_custom_mouse_cursor() updates
+	# immediately internally, but the OS-drawn cursor image itself only
+	# redraws on the next mouse motion/window-enter event on several
+	# platforms — reported as the pinch cursor sticking around after a
+	# building move is confirmed by a click (no mouse motion involved).
+	# warp_mouse() to the mouse's own position forces an immediate redraw
+	# without actually moving the cursor.
+	Input.warp_mouse(get_viewport().get_mouse_position())
 
 
 func _refresh_tool_label() -> void:

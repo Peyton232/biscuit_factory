@@ -45,12 +45,22 @@ signal held_changed(cat: Cat)
 ## help clicking; keeps the building underneath it clickable too.
 @export var stationed_pick_radius: float = 0.5
 ## Height a held cat's origin floats at, so it visibly separates from the
-## floor. Raised from the old 0.6 (✅ 2026-07-15, paired with Cat's own
-## _HELD_VISUAL_Y) — the cat's sprite now hangs *below* this point rather
-## than standing on it (reading as held by the scruff of the neck,
-## dangling), so the anchor needs to sit higher for the dangling feet to
-## still clear the ground.
-@export var held_height: float = 1.1
+## floor. Paired with Cat's own _HELD_VISUAL_Y (the sprite hangs *below*
+## this point rather than standing on it, reading as held by the scruff
+## of the neck, dangling) — needs to clear _HELD_VISUAL_Y's downward pull
+## by a modest margin so the dangling feet stay above the ground.
+## **No longer just a lift distance from the ground point (✅ fixed —
+## "the cursor is literally below the cat when we pick them up," and
+## explicitly not by shrinking the cat)** — see _held_target_position()'s
+## doc comment for the actual mechanism. This value is now purely "how
+## high off the ground does the grab point float" with zero cursor-
+## alignment cost, since alignment is exact at any height — which is
+## exactly what let `_HELD_VISUAL_Y` get raised to put the grab point at
+## the cat's actual neck (see its own doc comment) without reintroducing
+## any drift: raised 0.8 -> 1.5m to clear that larger pull and keep the
+## now much-lower-hanging feet visibly above the ground (~0.2m
+## clearance).
+@export var held_height: float = 1.5
 
 var _selected: Cat = null
 var _held: Cat = null
@@ -58,7 +68,40 @@ var _held: Cat = null
 
 func _process(_delta: float) -> void:
 	if _held != null and grid_cursor.has_hover:
-		_held.position = grid_cursor.world_point + Vector3.UP * held_height
+		_held.position = _held_target_position()
+
+
+## Where a held cat's grab point (node origin) belongs, given the current
+## mouse position and camera — **intersects the mouse ray with the
+## horizontal plane at y = held_height directly, instead of intersecting
+## the y = 0 ground plane and then lifting the result straight up in
+## world space** (the old approach, and the bug: a ray-plane intersection
+## always reprojects to the exact screen pixel it was cast from, for
+## *any* plane height — but a point produced by lifting an *already-
+## intersected* ground point up in world Y is a different point off that
+## ray entirely, and drifts away from the cursor's actual screen position
+## under this camera's perspective, worse at higher held_height/lower
+## zoom. That drift was the real bug reported as "the cursor is under
+## the cat" — confirmed numerically (see decisions.md) — not something a
+## shrink/resize hack could fix, since it doesn't touch the
+## mismatch between how the two points are derived**. Raycasting the
+## target plane directly is exact at any zoom and any held_height, with
+## no tuning required — same math GridCursor/CameraRig already use for
+## their own y=0 raycasts, just generalized to an arbitrary plane height.
+func _held_target_position() -> Vector3:
+	var camera: Camera3D = get_viewport().get_camera_3d()
+	if camera == null:
+		return grid_cursor.world_point + Vector3.UP * held_height
+	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
+	var origin: Vector3 = camera.project_ray_origin(mouse_pos)
+	var direction: Vector3 = camera.project_ray_normal(mouse_pos)
+	if direction.y >= 0.0:
+		# Ray parallel to horizontal planes or pointing upward — can't
+		# intersect; same degenerate case GridCursor's own ground raycast
+		# guards against.
+		return grid_cursor.world_point + Vector3.UP * held_height
+	var t: float = (origin.y - held_height) / direction.y
+	return origin - direction * t
 
 
 func _unhandled_input(event: InputEvent) -> void:

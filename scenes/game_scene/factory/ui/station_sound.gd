@@ -37,12 +37,33 @@ extends Node3D
 ## Pause after ambient_sound finishes before it plays again. 0 = loop
 ## back-to-back with no gap.
 @export var ambient_gap_seconds: float = 0.0
+## Volume _batch_envelope_db() ramps up to at full swing (mid-batch) —
+## 0 dB (ambient_sound's own unmodified volume) by default, so every
+## other station's behavior is unchanged; per-station tuning knob, same
+## "one script, per-type export values set in each station's own .tscn"
+## pattern as ambient_gap_seconds above. Mixer set to -1.94 dB (✅
+## 2026-07-15 — "make the mixer noise about 20% lower as a whole") — a
+## 20% reduction in linear amplitude is 20 * log10(0.8) ≈ -1.94 dB;
+## dB is a log scale, so this is a genuinely smaller-sounding change than
+## "-20" would be (-20 dB is roughly a 90% amplitude cut, not 20%).
+@export var peak_volume_db: float = 0.0
 
 ## Roughly a station's own footprint plus its progress bar above it —
 ## doesn't need to be pixel-precise, just large enough that the ambience
 ## doesn't cut in/out right at a building's own edges.
 const _VISIBILITY_AABB := AABB(Vector3(-1.2, -0.2, -1.2), Vector3(2.4, 3.0, 2.4))
 const _BUS: StringName = &"SFX"
+
+## How long the ambient volume takes to ramp up at the start of a batch
+## and back down at the end — a whole-batch envelope layered on top of
+## the loop/gap mechanics above, not tied to ambient_sound's own clip
+## length (which may loop several times within one batch — the Assembly
+## Table's pulsing assembly_pop.wav, for instance). Reported as the
+## instant on/off pop at a batch's start/end reading harsh.
+const _FADE_SECONDS: float = 0.2
+## Matches this project's usual silence floor (see TierMusicController/
+## MusicController's own -80 dB convention).
+const _SILENT_DB: float = -80.0
 
 var _notifier: VisibleOnScreenNotifier3D
 var _ambient_player: AudioStreamPlayer3D
@@ -74,12 +95,25 @@ func _process(delta: float) -> void:
 		if _ambient_player.playing:
 			_ambient_player.stop()
 		return
+	_ambient_player.volume_db = _batch_envelope_db()
 	if _ambient_player.playing:
 		return
 	if _gap_timer > 0.0:
 		_gap_timer -= delta
 		return
 	_ambient_player.play()
+
+
+## Volume envelope for the *whole batch* (peak_volume_db in the middle,
+## ramping to _SILENT_DB within _FADE_SECONDS of either end) — independent
+## of whichever individual loop iteration of ambient_sound happens to be
+## playing right now. Only called while building.progress() > 0.0, which
+## guarantees building.recipe isn't null (see ProcessingBuilding.progress()).
+func _batch_envelope_db() -> float:
+	var elapsed: float = building.progress() * building.recipe.processing_time
+	var remaining: float = building.recipe.processing_time - elapsed
+	var fade_ratio: float = clampf(minf(elapsed, remaining) / _FADE_SECONDS, 0.0, 1.0)
+	return lerpf(_SILENT_DB, peak_volume_db, fade_ratio)
 
 
 func _on_ambient_finished() -> void:

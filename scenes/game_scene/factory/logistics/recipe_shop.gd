@@ -53,10 +53,27 @@ const INTERNALLY_UNLOCKS: Dictionary[Recipe, Array] = {
 		preload("res://resources/recipes/rich_dough.tres"),
 		preload("res://resources/recipes/bread_roll.tres"),
 	],
+	# **Bundles Rich Dough + Bread Rolls too, not just itself (✅ fixed —
+	# reported as "Bread Rolls should unlock when you buy Butter Rolls")**
+	# — progression.md's table assumed Rich Dough/Bread Rolls would
+	# already be unlocked by the time a player buys Butter Rolls, since
+	# both are Tier 2 recipes reachable in either order; nothing enforces
+	# that purchase order, so a player buying Butter Rolls first got a
+	# recipe it could never actually produce (its Oven-made Bread Rolls
+	# input was still locked). Duplicates bread_roll.tres's own bundle
+	# here rather than relying on purchase order — _unlock_bundle() skips
+	# anything already unlocked, so this is a no-op if Bread Rolls was
+	# bought first, and the actual fix if it wasn't.
 	preload("res://resources/recipes/butter_roll.tres"): [
+		preload("res://resources/recipes/rich_dough.tres"),
+		preload("res://resources/recipes/bread_roll.tres"),
 		preload("res://resources/recipes/butter_roll.tres"),
 	],
+	# Same latent bug as Butter Rolls above (Croissants also needs Rich
+	# Dough, another same-tier recipe with no enforced purchase order) —
+	# bundled directly rather than assuming Bread Rolls was bought first.
 	preload("res://resources/recipes/croissant.tres"): [
+		preload("res://resources/recipes/rich_dough.tres"),
 		preload("res://resources/recipes/croissant.tres"),
 	],
 	preload("res://resources/recipes/cream_pie.tres"): [

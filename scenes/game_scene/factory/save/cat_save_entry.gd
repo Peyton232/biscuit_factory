@@ -22,6 +22,8 @@ extends Resource
 @export var position: Vector3 = Vector3.ZERO
 ## Index into Cat.FUR_COLORS — see Cat.set_fur_color()/fur_color_index.
 @export var fur_color_index: int = 0
+## Index into Cat.BREEDS — see Cat.set_breed()/breed_index.
+@export var breed_index: int = 0
 @export var total_deliveries_completed: int = 0
 @export var total_delivery_seconds: float = 0.0
 @export var total_busy_seconds: float = 0.0

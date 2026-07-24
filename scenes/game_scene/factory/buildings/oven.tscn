@@ -35,7 +35,7 @@ size = Vector2(1.9, 1.4)
 script = ExtResource("1_oven")
 required_role = 2
 texture_on = ExtResource("18_sprite_on")
-available_recipes = Array[Recipe]([ExtResource("6_toast"), ExtResource("7_sweetroll"), ExtResource("8_sugarcookie"), ExtResource("9_cakelayer"), ExtResource("10_bread"), ExtResource("11_breadroll"), ExtResource("12_croissant"), ExtResource("13_creampie"), ExtResource("14_biscuit"), ExtResource("15_meringuepie"), ExtResource("16_danish"), ExtResource("17_frenchtoast")])
+available_recipes = Array[Recipe]([ExtResource("10_bread"), ExtResource("11_breadroll"), ExtResource("12_croissant"), ExtResource("13_creampie"), ExtResource("14_biscuit"), ExtResource("6_toast"), ExtResource("7_sweetroll"), ExtResource("8_sugarcookie"), ExtResource("9_cakelayer"), ExtResource("15_meringuepie"), ExtResource("16_danish"), ExtResource("17_frenchtoast")])
 
 [node name="Visual" type="Sprite3D" parent="."]
 position = Vector3(0, 0.05, 0)

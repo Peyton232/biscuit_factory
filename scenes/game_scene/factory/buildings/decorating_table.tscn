@@ -32,7 +32,7 @@ required_role = 4
 texture_active_1 = ExtResource("13_active1")
 texture_active_2 = ExtResource("14_active2")
 available_recipes = Array[Recipe]([ExtResource("6_creambun"), ExtResource("7_butterroll"), ExtResource("8_butteredtoast"), ExtResource("9_frostedsweetroll"), ExtResource("10_frostedsugarcookie"), ExtResource("11_frostedcake")])
-station_offset = Vector3(-0.8, -0.2, -0.8)
+station_offset = Vector3(-0.8, 0.0, -0.8)
 
 [node name="Visual" type="Sprite3D" parent="."]
 position = Vector3(0, 0.05, 0)

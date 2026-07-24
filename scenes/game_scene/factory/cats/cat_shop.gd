@@ -9,7 +9,9 @@ extends Node
 ## in the world — so the free starting cat (Newby, cat #1, placed
 ## directly in the scene rather than bought here) doesn't inflate the
 ## first shop adoption's price. Each adopted cat also gets a random fur
-## tint from Cat.FUR_COLORS, purely cosmetic.
+## tint from Cat.FUR_COLORS and, independently, a random breed from
+## Cat.BREEDS (✅ added — both multiply together, see Cat.BREEDS' own doc
+## comment), purely cosmetic either way.
 ##
 ## **Owns the shared random-name pool** (`NAME_BANK`, `next_suggested_name()`)
 ## used by both single adoption (`CatNamingDialog` previews one name,
@@ -19,9 +21,11 @@ extends Node
 ## either dialog: it's shared, shop-wide adoption state, not a concern of
 ## either individual view.
 ##
-## **Two spawn paths**: `adopt_cat_at(name, role, position)` spawns at an
-## exact world position — used for single adoption, where the player
-## clicks to place the cat (see `CatPlacer`). `buy_cat(name, role)` still
+## **Two spawn paths**: `adopt_cat_at(name, role, position, breed_index,
+## fur_color_index)` spawns at an exact world position — used for single
+## adoption, where the player clicks to place the cat (see `CatPlacer`,
+## which rolls the breed/fur indices up front so its ghost preview shows
+## the exact cat that's about to be adopted). `buy_cat(name, role)` still
 ## spawns at the fixed `spawn_position` export (with a small random
 ## jitter so a run of them doesn't stack exactly on top of each other) —
 ## used for batch adoption, where requiring N placement clicks in a row
@@ -176,7 +180,19 @@ func can_afford() -> bool:
 ## decisions.md. Purely a suggestion: nothing is reserved by calling
 ## this, so previewing one (opening a dialog) and never adopting just
 ## means that name comes up again sooner next time, which is fine.
+##
+## **The first two adoptions of a new game always suggest Saber, then
+## Chai** (✅ added — player request: these two should always show up
+## within the first 5 cats adopted; see Cat.SPECIAL_CATS for the
+## breed/fur combo each name carries). Keyed off _adopted_count, which is
+## 0 for a fresh CatShop and only ever restored (not reset) on a loaded
+## save — so this doesn't retroactively rename anything on a save that's
+## already past its first two adoptions.
 func next_suggested_name() -> String:
+	if _adopted_count == 0:
+		return "Saber"
+	if _adopted_count == 1:
+		return "Chai"
 	if _name_pool_index >= _name_pool.size():
 		_reshuffle_name_pool()
 	var name_: String = _name_pool[_name_pool_index]
@@ -192,9 +208,14 @@ func _reshuffle_name_pool() -> void:
 
 ## Adopts and spawns a new cat at an exact world position (the player
 ## clicked to place it — see CatPlacer) if affordable; returns false
-## otherwise.
-func adopt_cat_at(cat_name: String, role: Cat.Role, position: Vector3) -> bool:
-	return _spawn_cat(cat_name, role, position)
+## otherwise. **Takes the breed/fur roll as parameters, not rolled here
+## (✅ fixed — reported as "the ghost preview is always the orange cat,
+## then it switches to what it actually is once placed")** — CatPlacer
+## rolls both up front (see its own doc comment) so its ghost preview can
+## show the exact cat that's about to be adopted; re-rolling here would
+## silently make the preview a lie.
+func adopt_cat_at(cat_name: String, role: Cat.Role, position: Vector3, breed_index: int, fur_color_index: int) -> bool:
+	return _spawn_cat(cat_name, role, position, breed_index, fur_color_index)
 
 
 ## Adopts and spawns a new cat at the fixed spawn_position (plus a small
@@ -202,17 +223,25 @@ func adopt_cat_at(cat_name: String, role: Cat.Role, position: Vector3) -> bool:
 ## top of each other) if affordable; returns false otherwise. Used for
 ## single adoption before CatPlacer existed, and still used today for
 ## batch adoption, where requiring a placement click per cat would
-## defeat the point of buying several at once quickly.
+## defeat the point of buying several at once quickly. Rolls its own
+## breed/fur here (unlike adopt_cat_at()) since batch adoption has no
+## preview to keep in sync with.
 func buy_cat(cat_name: String, role: Cat.Role = Cat.Role.DELIVERY) -> bool:
 	var jitter := Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0))
-	return _spawn_cat(cat_name, role, spawn_position + jitter)
+	var breed_index: int = randi() % Cat.BREEDS.size()
+	var fur_color_index: int = Cat.random_fur_color_index()
+	if Cat.SPECIAL_CATS.has(cat_name):
+		var combo: Vector2i = Cat.SPECIAL_CATS[cat_name]
+		breed_index = combo.x
+		fur_color_index = combo.y
+	return _spawn_cat(cat_name, role, spawn_position + jitter, breed_index, fur_color_index)
 
 
 ## Common spend-and-spawn path for both adoption entry points above. The
 ## name/role are set after add_child() since Cat.set_cat_name()/set_role()
 ## touch onready vars (name label, station-search state) that only exist
 ## once the cat has entered the tree.
-func _spawn_cat(cat_name: String, role: Cat.Role, position: Vector3) -> bool:
+func _spawn_cat(cat_name: String, role: Cat.Role, position: Vector3, breed_index: int, fur_color_index: int) -> bool:
 	if not economy.try_spend(current_cost()):
 		return false
 	_adopted_count += 1
@@ -225,7 +254,8 @@ func _spawn_cat(cat_name: String, role: Cat.Role, position: Vector3) -> bool:
 	cats_root.add_child(cat)
 	cat.set_cat_name(cat_name)
 	cat.set_role(role)
-	cat.set_fur_color(randi() % Cat.FUR_COLORS.size())
+	cat.set_fur_color(fur_color_index)
+	cat.set_breed(breed_index)
 	cost_changed.emit(current_cost())
 	return true
 
@@ -245,6 +275,7 @@ func restore_cat(entry: CatSaveEntry) -> void:
 	cat.set_cat_name(entry.cat_name)
 	cat.set_role(entry.role as Cat.Role)
 	cat.set_fur_color(entry.fur_color_index)
+	cat.set_breed(entry.breed_index)
 	cat.load_lifetime_stats(entry)
 
 

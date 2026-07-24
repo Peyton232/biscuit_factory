@@ -81,7 +81,8 @@ static func _employee_of_the_month(cats: Array[Cat]) -> EmployeeAward:
 			best_total = total
 	if best == null or best_total <= 0:
 		return null
-	return EmployeeAward.new("Employee of the Month", best.cat_name, "%d jobs completed" % best_total)
+	return EmployeeAward.new("Employee of the Month", best.cat_name, "%d jobs completed" % best_total,
+			best.breed_index, best.fur_color_index)
 
 
 static func _fastest_delivery_cat(cats: Array[Cat]) -> EmployeeAward:
@@ -96,7 +97,8 @@ static func _fastest_delivery_cat(cats: Array[Cat]) -> EmployeeAward:
 			best_avg = avg
 	if best == null:
 		return null
-	return EmployeeAward.new("Fastest Delivery Cat", best.cat_name, "%.1fs avg. delivery" % best_avg)
+	return EmployeeAward.new("Fastest Delivery Cat", best.cat_name, "%.1fs avg. delivery" % best_avg,
+			best.breed_index, best.fur_color_index)
 
 
 static func _master_baker(cats: Array[Cat]) -> EmployeeAward:
@@ -109,7 +111,8 @@ static func _master_baker(cats: Array[Cat]) -> EmployeeAward:
 			best_total = total
 	if best == null or best_total <= 0:
 		return null
-	return EmployeeAward.new("Master Baker", best.cat_name, "%d items produced" % best_total)
+	return EmployeeAward.new("Master Baker", best.cat_name, "%d items produced" % best_total,
+			best.breed_index, best.fur_color_index)
 
 
 static func _workaholic(cats: Array[Cat]) -> EmployeeAward:
@@ -122,7 +125,8 @@ static func _workaholic(cats: Array[Cat]) -> EmployeeAward:
 	if best == null or best_seconds <= 0.0:
 		return null
 	return EmployeeAward.new(
-			"Workaholic", best.cat_name, "%s spent working" % LifetimeStats.format_playtime(best_seconds))
+			"Workaholic", best.cat_name, "%s spent working" % LifetimeStats.format_playtime(best_seconds),
+			best.breed_index, best.fur_color_index)
 
 
 static func _professional_napper(cats: Array[Cat]) -> EmployeeAward:
@@ -135,7 +139,8 @@ static func _professional_napper(cats: Array[Cat]) -> EmployeeAward:
 	if best == null or best_seconds <= 0.0:
 		return null
 	return EmployeeAward.new(
-			"Professional Napper", best.cat_name, "%s spent napping" % LifetimeStats.format_playtime(best_seconds))
+			"Professional Napper", best.cat_name, "%s spent napping" % LifetimeStats.format_playtime(best_seconds),
+			best.breed_index, best.fur_color_index)
 
 
 static func _explorer(cats: Array[Cat]) -> EmployeeAward:
@@ -147,7 +152,8 @@ static func _explorer(cats: Array[Cat]) -> EmployeeAward:
 			best_distance = cat.total_distance_meters
 	if best == null or best_distance <= 0.0:
 		return null
-	return EmployeeAward.new("Explorer", best.cat_name, "%d m walked" % roundi(best_distance))
+	return EmployeeAward.new("Explorer", best.cat_name, "%d m walked" % roundi(best_distance),
+			best.breed_index, best.fur_color_index)
 
 
 static func _jack_of_all_trades(cats: Array[Cat]) -> EmployeeAward:
@@ -160,7 +166,8 @@ static func _jack_of_all_trades(cats: Array[Cat]) -> EmployeeAward:
 			best_count = count
 	if best == null or best_count < _MIN_ROLES_FOR_JACK_OF_ALL_TRADES:
 		return null
-	return EmployeeAward.new("Jack of All Trades", best.cat_name, "%d roles held" % best_count)
+	return EmployeeAward.new("Jack of All Trades", best.cat_name, "%d roles held" % best_count,
+			best.breed_index, best.fur_color_index)
 
 
 static func _most_station_jobs(cats: Array[Cat], role: Cat.Role) -> EmployeeAward:
@@ -173,7 +180,8 @@ static func _most_station_jobs(cats: Array[Cat], role: Cat.Role) -> EmployeeAwar
 			best_count = count
 	if best == null or best_count < _MIN_STATION_BATCHES_FOR_AWARD:
 		return null
-	return EmployeeAward.new("Most %s Jobs" % _role_label(role), best.cat_name, "%d batches" % best_count)
+	return EmployeeAward.new("Most %s Jobs" % _role_label(role), best.cat_name, "%d batches" % best_count,
+			best.breed_index, best.fur_color_index)
 
 
 static func _role_label(role: Cat.Role) -> String:

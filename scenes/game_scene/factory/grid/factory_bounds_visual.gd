@@ -66,14 +66,30 @@ const _WALL_THICKNESS: float = 0.3
 ## structural (unlike the floor's grid-aligned scale, bricks don't need
 ## to line up with anything).
 const _WALL_UV_REPEAT_METERS: float = 1.2
+## Fixed vertical (height) UV tiling, derived once from the wall's own
+## constant height — see _place_wall_slabs()'s doc comment for why this
+## has to be separate from the per-side horizontal scale.
+const _WALL_HEIGHT_UV_SCALE: float = _WALL_HEIGHT / _WALL_UV_REPEAT_METERS
 
 ## Thin solid-color slab sitting directly on top of each wall side, so
-## the top face reads as a flat black cap instead of the brick texture
-## (a BoxMesh can't show a different material per face — see this
-## class's own doc comment — so this is a second, separate box rather
-## than a material tweak on the wall slabs themselves).
-const _WALL_CAP_HEIGHT: float = 0.02
-const _WALL_CAP_COLOR: Color = Color(0, 0, 0)
+## the top face reads as a flat cap instead of the brick texture (a
+## BoxMesh can't show a different material per face — see this class's
+## own doc comment — so this is a second, separate box rather than a
+## material tweak on the wall slabs themselves). **A BoxMesh's brick
+## material covers all six of its own faces, including its top — the cap
+## exists specifically to hide that (otherwise a stray, badly-scaled
+## brick pattern would show on top of the wall).** Raised 0.02 -> 0.08
+## (✅ fixed — reported as brick color "poking through" the cap, worse at
+## a distant/grazing viewing angle) — the cap's own clearance above the
+## slab tops is exactly this height, and 0.02m left almost no depth-buffer
+## headroom at typical camera distances/angles, making it a textbook
+## z-fighting setup between the cap's top face and the slab's
+## brick-textured top face. Still a thin, barely-visible rim at this
+## height, just with real z-fighting headroom now.
+const _WALL_CAP_HEIGHT: float = 0.08
+## RGB(39, 66, 89) — a dark slate blue, player's own pick (✅ changed
+## 2026-07-15, was plain black).
+const _WALL_CAP_COLOR: Color = Color(39.0 / 255.0, 66.0 / 255.0, 89.0 / 255.0)
 
 var _floor_instance: MeshInstance3D
 var _floor_material: StandardMaterial3D
@@ -140,6 +156,15 @@ func _make_slab(texture: Texture2D, materials_out: Array[StandardMaterial3D]) ->
 	# — mipmaps are kept (unlike Sprite3D's icons) since a tiled surface
 	# actually viewed at distance/an angle needs them to avoid shimmering,
 	# which plain NEAREST with no mips would do instead of blurring.
+	# **ANISOTROPIC variant tried and reverted** — added for a "stretched
+	# at a grazing angle" report, but this project runs on the
+	# `gl_compatibility` renderer (project.godot), which has limited/
+	# inconsistent anisotropic filtering support — the wall looked *worse*
+	# (a smooth gradient with no visible brick pattern at all, not just
+	# blurry) after switching, consistent with anisotropic silently
+	# misbehaving on this renderer rather than helping. Back to plain
+	# NEAREST_WITH_MIPMAPS while the real cause of the stretching report
+	# gets re-investigated — see decisions.md.
 	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
 	materials_out.append(material)
 
@@ -181,45 +206,87 @@ func _refresh() -> void:
 		center + Vector3(-size.x * 0.5, 0.0, 0.0),
 		center + Vector3(size.x * 0.5, 0.0, 0.0),
 	]
-	# North/South stay extended past the corner; East/West are shortened
-	# to fit exactly in the gap that leaves, instead of also extending —
-	# see this class's doc comment for why both used to extend (real
-	# Z-fighting from fully-overlapping corner geometry).
-	var full_sizes: Array[Vector3] = [
+	# **Every side's OUTER slab extends past the nominal corner; every
+	# side's INNER slab stays at nominal length (✅ fixed — see
+	# _place_wall_slabs()'s doc comment for the full corner-by-corner
+	# reasoning)** — replaces the old "North/South both extend, East/West
+	# both shorten" scheme, which avoided the original full-overlap
+	# z-fighting but left a different bug: North/South's *inner* slab
+	# extended right along with their outer, poking blue into territory
+	# that should have been East/West's outer (pink) face at the exact
+	# corner — reported as "a little bit sticking through" at the
+	# corners. Outer always extending means adjacent sides' outer slabs
+	# safely double-cover the true exterior corner (same color, no
+	# visible z-fight); inner always staying at nominal length means no
+	# side's inner ever reaches into a corner it doesn't belong in.
+	var outer_full_sizes: Array[Vector3] = [
 		Vector3(size.x + _WALL_THICKNESS, _WALL_HEIGHT, _WALL_THICKNESS),
 		Vector3(size.x + _WALL_THICKNESS, _WALL_HEIGHT, _WALL_THICKNESS),
+		Vector3(_WALL_THICKNESS, _WALL_HEIGHT, size.y + _WALL_THICKNESS),
+		Vector3(_WALL_THICKNESS, _WALL_HEIGHT, size.y + _WALL_THICKNESS),
+	]
+	var inner_full_sizes: Array[Vector3] = [
+		Vector3(size.x, _WALL_HEIGHT, _WALL_THICKNESS),
+		Vector3(size.x, _WALL_HEIGHT, _WALL_THICKNESS),
 		Vector3(_WALL_THICKNESS, _WALL_HEIGHT, size.y - _WALL_THICKNESS),
 		Vector3(_WALL_THICKNESS, _WALL_HEIGHT, size.y - _WALL_THICKNESS),
 	]
 	for i: int in 4:
-		_place_wall_slabs(i, centers[i], full_sizes[i], _OUTWARD_DIRECTIONS[i])
-		_place_wall_cap(i, centers[i], full_sizes[i])
+		_place_wall_slabs(i, centers[i], outer_full_sizes[i], inner_full_sizes[i], _OUTWARD_DIRECTIONS[i])
+		_place_wall_cap(i, centers[i], outer_full_sizes[i])
 
 
-## Splits one side's full-thickness footprint into an inner (toward the
-## factory center) and outer (away from it) half-thickness slab, offset
-## apart along outward_dir so together they still fill the same space.
-func _place_wall_slabs(side: int, center: Vector3, full_size: Vector3, outward_dir: Vector3) -> void:
+## Splits one side's footprint into an inner (toward the factory center)
+## and outer (away from it) half-thickness slab, offset apart along
+## outward_dir. **outer_full_size/inner_full_size are deliberately
+## different lengths, not a shared full_size split into two halves (✅
+## fixed — reported as brick color visibly "sticking through" at the
+## corners)** — worked out by tracing the corner geometry into its four
+## thickness-vs-thickness sub-squares (see decisions.md for the full
+## derivation): at a corner, the *true exterior* point needs an OUTER
+## (pink) slab reaching into it from *whichever* side gets there, and the
+## *true interior* point needs an INNER (blue) slab — the bug was that
+## the old scheme extended North/South's *inner* slab past the nominal
+## corner right along with its outer, so for the thin sliver where
+## North's inner overlapped West's own outer thickness band, blue showed
+## where the exterior-facing pink was expected. Fixed by decoupling the
+## two: every side's outer slab always extends past the nominal corner
+## (`size + _WALL_THICKNESS`, so adjacent sides' outer slabs safely
+## double-cover the true exterior corner — same color, no visible
+## z-fight) while every side's inner slab stays at exactly nominal length
+## (`size`, no extension) — verified corner-square-by-corner to leave
+## zero gaps and zero wrong-colored patches. The two slabs share the same
+## thickness-axis half-size and shift (unaffected by this — `_WALL_THICKNESS`
+## itself never changes between inner/outer), only their *length* differs.
+func _place_wall_slabs(side: int, center: Vector3, outer_full_size: Vector3, inner_full_size: Vector3, outward_dir: Vector3) -> void:
 	var along_x: bool = absf(outward_dir.x) > 0.5
-	var half_size: Vector3 = full_size
-	var length_meters: float
+	var shift: Vector3 = outward_dir * _WALL_THICKNESS * 0.25
+
+	var outer_half_size: Vector3 = outer_full_size
+	var inner_half_size: Vector3 = inner_full_size
+	var outer_length_meters: float
+	var inner_length_meters: float
 	if along_x:
-		half_size.x = full_size.x * 0.5
-		length_meters = full_size.z
+		outer_half_size.x = _WALL_THICKNESS * 0.5
+		inner_half_size.x = _WALL_THICKNESS * 0.5
+		outer_length_meters = outer_full_size.z
+		inner_length_meters = inner_full_size.z
 	else:
-		half_size.z = full_size.z * 0.5
-		length_meters = full_size.x
-	var shift: Vector3 = outward_dir * (half_size.x if along_x else half_size.z) * 0.5
+		outer_half_size.z = _WALL_THICKNESS * 0.5
+		inner_half_size.z = _WALL_THICKNESS * 0.5
+		outer_length_meters = outer_full_size.x
+		inner_length_meters = inner_full_size.x
 
-	var uv_scale: float = length_meters / _WALL_UV_REPEAT_METERS
-	_set_slab(_inner_slabs[side], _inner_materials[side], center - shift, half_size, uv_scale)
-	_set_slab(_outer_slabs[side], _outer_materials[side], center + shift, half_size, uv_scale)
+	_set_slab(_inner_slabs[side], _inner_materials[side], center - shift, inner_half_size,
+			Vector3(inner_length_meters / _WALL_UV_REPEAT_METERS, _WALL_HEIGHT_UV_SCALE, 1.0))
+	_set_slab(_outer_slabs[side], _outer_materials[side], center + shift, outer_half_size,
+			Vector3(outer_length_meters / _WALL_UV_REPEAT_METERS, _WALL_HEIGHT_UV_SCALE, 1.0))
 
 
-func _set_slab(segment: MeshInstance3D, material: StandardMaterial3D, center: Vector3, size: Vector3, uv_scale: float) -> void:
+func _set_slab(segment: MeshInstance3D, material: StandardMaterial3D, center: Vector3, size: Vector3, uv_scale: Vector3) -> void:
 	(segment.mesh as BoxMesh).size = size
 	segment.position = center + Vector3(0.0, _WALL_HEIGHT * 0.5, 0.0)
-	material.uv1_scale = Vector3(uv_scale, uv_scale, uv_scale)
+	material.uv1_scale = uv_scale
 
 
 ## Sits the flat black cap directly on top of the side's full footprint

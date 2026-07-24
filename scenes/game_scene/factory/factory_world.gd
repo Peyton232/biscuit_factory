@@ -41,6 +41,15 @@ extends Node3D
 ## block on it) before the player ever sees the factory. A loaded/
 ## continued game never sees it, same treatment `tutorial_manager`
 ## already gives its own first step.
+##
+## Also decides *when* `tier_music_controller` actually starts playing,
+## rather than letting it default to "the instant the scene loads" (see
+## TierMusicController's own class doc for why `_ready()` only builds the
+## stream and tracks the current tier — it never starts playback itself):
+## immediately for a loaded save (already at the correct tier the moment
+## the factory appears), but only once `opening_sequence.message_dismissed`
+## fires for a brand new game — starting music under a still-empty,
+## cat-less factory during the opening's walk-in would undercut that beat.
 
 @export var economy: Economy
 @export var tier_manager: TierManager
@@ -56,6 +65,7 @@ extends Node3D
 @export var factory_hud: FactoryHud
 @export var victory_sequence: VictorySequence
 @export var opening_sequence: OpeningSequence
+@export var tier_music_controller: TierMusicController
 
 ## How long the "Congratulations!" beat sits on screen before the credits
 ## scene loads — long enough to read, short enough not to feel stuck.
@@ -73,10 +83,21 @@ func _ready() -> void:
 	var data: FactorySaveData = SaveManager.take_pending_save_data()
 	if data != null:
 		apply_save_data(data)
+		_start_tier_music()
 	elif opening_sequence != null:
+		if tier_music_controller != null:
+			opening_sequence.message_dismissed.connect(
+					tier_music_controller.start_playback, CONNECT_ONE_SHOT)
 		opening_sequence.play()
+	else:
+		_start_tier_music()
 	if tier_manager != null:
 		tier_manager.tier_advanced.connect(_on_tier_advanced)
+
+
+func _start_tier_music() -> void:
+	if tier_music_controller != null:
+		tier_music_controller.start_playback()
 
 
 ## Builds a fresh snapshot of the current game state.

@@ -22,6 +22,18 @@ extends Node
 ## straight to the reveal, same convention scrolling_credits.gd already
 ## uses for "ui_cancel skips to the end."
 
+## Emitted the moment the player has moved past this opening's very first
+## beat — either by pressing Next on the "Every great bakery starts
+## somewhere..." message, or by pressing Skip at any point during the
+## sequence (which bypasses the message entirely; skipping clearly means
+## "let me into the game," so it counts the same as clicking through it).
+## Guaranteed to fire exactly once per play() call regardless of path,
+## including play()'s own early-return bail-outs — FactoryWorld uses this
+## to time when TierMusicController first starts playing tier music for a
+## brand new game, instead of the instant the (still-empty-feeling)
+## factory scene loads. See TierMusicController's own class doc.
+signal message_dismissed
+
 @export var camera_rig: CameraRig
 @export var factory_hud: CanvasLayer
 @export var cats_root: Node3D
@@ -87,12 +99,21 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _on_next_pressed() -> void:
-	_next_requested = true
+	_request_next()
 
 
 func _skip() -> void:
 	_skipped = true
+	_request_next()
+
+
+## Shared by both dismissal paths so message_dismissed fires exactly once
+## regardless of which one the player used (see the signal's own doc).
+func _request_next() -> void:
+	if _next_requested:
+		return
 	_next_requested = true
+	message_dismissed.emit()
 
 
 ## Runs the full beat once: pulls the camera in tight, teleports the
@@ -104,9 +125,11 @@ func _skip() -> void:
 ## runs before any player action could remove it either way.
 func play() -> void:
 	if cats_root.get_child_count() == 0:
+		message_dismissed.emit()
 		return
 	_cat = cats_root.get_child(0) as Cat
 	if _cat == null:
+		message_dismissed.emit()
 		return
 
 	_playing = true

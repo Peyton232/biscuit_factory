@@ -50,6 +50,20 @@ extends Node3D
 ## already makes — a bin's current_inputs() is its long, player-
 ## configurable accept list, not what's actually piled up; a dozen small
 ## icons for "would accept if present" would be noise, not information.
+##
+## **Every pooled icon gets a distinct render_priority (✅ fixed —
+## reported as "Z fighting on items in buildings", worst on the Oven)** —
+## every icon shares the exact same Node3D `position` (_GROUND_ANCHOR;
+## the row layout is entirely a billboard-space `offset` trick, see above),
+## so with `no_depth_test = true` and every icon at the *same* fixed
+## `render_priority = 1`, two-or-more-item buildings (an Oven mid-recipe
+## showing both its input and output, most stations once they're actually
+## working) had no real tiebreaker between coincident, depth-test-disabled
+## transparent quads — Godot falls back to camera-distance sorting, which
+## is itself a tie for sprites at the same position, so the draw order
+## flipped frame to frame. _row_icon_at()/_make_output_icon() now assign
+## each icon its own priority (row index, then the output above every row
+## slot) so draw order is deterministic instead of an unstable tie.
 
 @export var building: Building
 @export var icon_pixel_size: float = 0.015
@@ -134,6 +148,9 @@ func _populate_output(outputs: Array[StringName]) -> void:
 		return
 	if _output_icon == null:
 		_output_icon = _make_icon()
+		# Above every possible row slot's own priority (see _row_icon_at())
+		# — see class doc's render_priority note.
+		_output_icon.render_priority = _OUTPUT_RENDER_PRIORITY
 	_set_icon_texture(_output_icon, outputs[0])
 	_output_icon.offset = output_offset_px
 
@@ -159,8 +176,19 @@ func _row_icon_at(i: int) -> Sprite3D:
 	if i < _row_icons.size():
 		return _row_icons[i]
 	var icon: Sprite3D = _make_icon()
+	# See class doc's render_priority note — index-based, not a shared
+	# constant, so simultaneously-visible row icons never tie.
+	icon.render_priority = 1 + i
 	_row_icons.append(icon)
 	return icon
+
+
+## Headroom above every row icon's own render_priority (1 + index — see
+## _row_icon_at()) — a building would need more than this many
+## simultaneous row icons before the output icon's priority could
+## collide with one, far beyond any real input/output count in this game
+## (largest is 3, Assembly Table's Frosted Cake — see recipes.md).
+const _OUTPUT_RENDER_PRIORITY: int = 50
 
 
 func _make_icon() -> Sprite3D:
@@ -169,7 +197,6 @@ func _make_icon() -> Sprite3D:
 	icon.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	icon.pixel_size = icon_pixel_size
 	icon.texture_filter = 0
-	icon.render_priority = 1
 	icon.no_depth_test = true
 	add_child(icon)
 	return icon

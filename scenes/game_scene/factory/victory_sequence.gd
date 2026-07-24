@@ -69,22 +69,20 @@ const _BOOTSTRAP_MAX_OVERSHIP_FACTOR: float = 1.2
 const _FADE_SECONDS: float = 0.6
 ## Seconds spent gliding from one waypoint to the next — slow and
 ## steady, matching gameplay_overview.md's "slow cinematic camera pan":
-## deliberately much slower than ordinary player-driven panning.
-const _PAN_LEG_SECONDS: float = 10.0
-## Waypoints as a fraction of the factory's own unlocked bounds (0..1 on
-## each axis), swept in order and looped — a lap around the bakery's
-## perimeter rather than fixed world coordinates, so it automatically
-## adapts to however large the player has expanded the factory.
-const _WAYPOINT_FRACTIONS: Array[Vector2] = [
-	Vector2(0.25, 0.25), Vector2(0.75, 0.25), Vector2(0.75, 0.75), Vector2(0.25, 0.75),
-]
-## How much of the factory's own footprint to keep in view at once, as a
-## multiple of its longer side — >1 leaves corners uncropped.
-const _ZOOM_FOOTPRINT_FACTOR: float = 0.6
-## Padding added around the placed-buildings bounding box (see
-## _built_area_bounds()) so buildings sitting right at the edge of that
-## box aren't cropped by the pan/zoom framing.
-const _BUILT_AREA_PADDING_METERS: float = 8.0
+## deliberately much slower than ordinary player-driven panning. Raised
+## 10.0 -> 15.0 (✅ 2026-07-15 — "camera pan in credits needs to be
+## slower") — first-pass number, not derived from anything; revisit
+## again if a real playthrough still reads as too quick.
+const _PAN_LEG_SECONDS: float = 15.0
+## Cap on how many buildings the cinematic lap visits — see
+## _sample_building_waypoints(). Keeps a huge end-game factory's lap a
+## reasonable length instead of touring every single building.
+const _MAX_PAN_WAYPOINTS: int = 6
+## Fixed cinematic zoom, close enough to comfortably frame one cluster of
+## buildings without deriving from the factory's overall footprint — see
+## _compute_pan_waypoints()'s doc comment for why a span-derived zoom was
+## the wrong call.
+const _WAYPOINT_ZOOM: float = 14.0
 
 @onready var _overlay: CanvasLayer = $Overlay
 @onready var _transition_fade: ColorRect = $Overlay/TransitionFade
@@ -187,57 +185,75 @@ func _fade(node: CanvasItem, from_alpha: float, to_alpha: float) -> void:
 	await tween.finished
 
 
-## Snapshot of the current built-area footprint, taken once per play() —
-## bounds could in principle expand mid-sequence, but re-deriving
-## waypoints mid-pan for that edge case isn't worth it for a one-time
-## victory lap.
+## Snapshot of the current built footprint, taken once per play() — bounds
+## could in principle expand mid-sequence, but re-deriving waypoints
+## mid-pan for that edge case isn't worth it for a one-time victory lap.
 ##
-## **Frames on the placed-buildings bounding box, not the full unlocked
-## rectangle (✅ 2026-07-15)** — the pan/zoom used to always sweep all four
-## quadrants of factory_bounds.unlocked_world_size(), which on a factory
-## where the player expanded well past their actual built footprint (a
-## very normal way to play — expansion is cheap insurance, not a promise
-## to fill every cell) spent much of the cinematic panning over bare
-## grass. `_built_area_bounds()` falls back to the full unlocked
-## rectangle only if there happen to be no buildings at all (shouldn't
-## normally be reachable at Tier Winner, but avoids a zero-size pan).
+## **Visits real building positions, not a swept bounding box (✅
+## replacing the 2026-07-15 bounding-box attempt)** — that fix stopped the
+## pan from covering the *full unlocked rectangle*, but a bounding box
+## still spans whatever gap sits between separate build clusters
+## (ingredient sources far from a shipping bin is a completely normal
+## layout), so the camera still lingered over bare grass at each rectangle
+## corner, and had to zoom out far enough to fit that whole span in frame
+## — reported as "pans over empty space and too zoomed out."
+## `_sample_building_waypoints()` picks a well-spread set of *actual*
+## buildings via greedy farthest-point sampling, so every stop sits on
+## something built, and `_WAYPOINT_ZOOM` is a small fixed value instead of
+## one derived from the factory's overall spread — a tight, close-up shot
+## of whichever cluster the camera is at, regardless of how far apart
+## clusters are from each other. Falls back to a single waypoint centered
+## on the unlocked rectangle only if there happen to be no buildings at
+## all (shouldn't normally be reachable at Tier Winner, but avoids an
+## empty waypoint list).
 func _compute_pan_waypoints() -> void:
-	var corner: Vector3
-	var size: Vector2
-	var built_rect: Rect2 = _built_area_bounds()
-	if built_rect.size.x > 0.0 and built_rect.size.y > 0.0:
-		corner = Vector3(built_rect.position.x, 0.0, built_rect.position.y)
-		size = built_rect.size
+	var buildings: Array[Building] = _all_buildings()
+	if buildings.is_empty():
+		var corner: Vector3 = factory_bounds.unlocked_world_corner()
+		var size: Vector2 = factory_bounds.unlocked_world_size()
+		_pan_waypoints = [corner + Vector3(size.x * 0.5, 0.0, size.y * 0.5)]
 	else:
-		corner = factory_bounds.unlocked_world_corner()
-		size = factory_bounds.unlocked_world_size()
-	_pan_waypoints.clear()
-	for fraction: Vector2 in _WAYPOINT_FRACTIONS:
-		_pan_waypoints.append(corner + Vector3(size.x * fraction.x, 0.0, size.y * fraction.y))
-	_pan_zoom = clampf(maxf(size.x, size.y) * _ZOOM_FOOTPRINT_FACTOR, camera_rig.min_zoom, camera_rig.max_zoom)
+		_pan_waypoints = _sample_building_waypoints(buildings)
+	_pan_zoom = clampf(_WAYPOINT_ZOOM, camera_rig.min_zoom, camera_rig.max_zoom)
 
 
-## World X/Z bounding rectangle of every placed building, padded by
-## _BUILT_AREA_PADDING_METERS — empty (zero size) if buildings_root isn't
-## wired or has no Building children yet.
-func _built_area_bounds() -> Rect2:
-	var rect := Rect2()
+## Every placed Building under buildings_root, or empty if it isn't wired.
+func _all_buildings() -> Array[Building]:
+	var buildings: Array[Building] = []
 	if buildings_root == null:
-		return rect
-	var first: bool = true
+		return buildings
 	for child: Node in buildings_root.get_children():
 		var building: Building = child as Building
-		if building == null:
-			continue
-		var point := Vector2(building.position.x, building.position.z)
-		if first:
-			rect = Rect2(point, Vector2.ZERO)
-			first = false
-		else:
-			rect = rect.expand(point)
-	if not first:
-		rect = rect.grow(_BUILT_AREA_PADDING_METERS)
-	return rect
+		if building != null:
+			buildings.append(building)
+	return buildings
+
+
+## Greedy farthest-point sampling: starts from the first building, then
+## repeatedly picks whichever remaining building is farthest from every
+## already-chosen one, up to _MAX_PAN_WAYPOINTS. Produces a well-spread
+## tour of the factory's actual clusters instead of favoring whichever
+## corner of a bounding box happens to be empty.
+func _sample_building_waypoints(buildings: Array[Building]) -> Array[Vector3]:
+	var remaining: Array[Vector3] = []
+	for building: Building in buildings:
+		remaining.append(building.position)
+	if remaining.size() <= _MAX_PAN_WAYPOINTS:
+		return remaining
+	var chosen: Array[Vector3] = [remaining.pop_front()]
+	while chosen.size() < _MAX_PAN_WAYPOINTS:
+		var best_index: int = 0
+		var best_distance: float = -1.0
+		for i: int in remaining.size():
+			var nearest: float = INF
+			for point: Vector3 in chosen:
+				nearest = minf(nearest, remaining[i].distance_to(point))
+			if nearest > best_distance:
+				best_distance = nearest
+				best_index = i
+		chosen.append(remaining[best_index])
+		remaining.remove_at(best_index)
+	return chosen
 
 
 ## First match wins — see the rank constants' doc comment above for why

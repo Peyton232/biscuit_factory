@@ -77,3 +77,4 @@ building = NodePath("..")
 script = ExtResource("19_stationsound")
 building = NodePath("..")
 ambient_sound = ExtResource("20_ambient")
+peak_volume_db = -1.94

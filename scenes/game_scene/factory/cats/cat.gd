@@ -30,12 +30,45 @@ enum State { IDLE, TO_PICKUP, TO_DESTINATION, TO_STATION, STATIONED, UPSET, HELD
 ## natural orange tabby coloring via Sprite3D.modulate (there's no
 ## separate hand-drawn art per color) — CatShop picks one at random per
 ## adoption via set_fur_color(). Index 0 is the untinted default.
+##
+## **No near-black tint (✅ removed 2026-07-15 — "we have a black cat
+## already, let's just remove the black overlay")** — BREEDS below already
+## has a dedicated hand-drawn black breed, so a separate near-black
+## *tint* was redundant on top of it, and read as flat-out wrong
+## multiplied over the Calico breed's own black/white/orange patchwork
+## art specifically (the shipped-then-reverted fix for that was a
+## Calico-only carve-out — see decisions.md for why the simpler "just
+## remove it" won instead). Was index 3 (`Color(0.22, 0.2, 0.22)`);
+## removing it shifted brown down from index 4 to index 3 — see
+## SPECIAL_CATS' Chai entry, updated to match.
 const FUR_COLORS: Array[Color] = [
 	Color(1.0, 1.0, 1.0),
 	Color(0.55, 0.55, 0.58),
 	Color(0.95, 0.9, 0.78),
-	Color(0.22, 0.2, 0.22),
 	Color(0.55, 0.38, 0.22),
+]
+
+## Base sprite-sheet variants ("breeds") — CatShop picks one at random per
+## adoption via set_breed(), same "no player choice, purely a random
+## cosmetic multiplier" spirit as FUR_COLORS (✅ added — 4 hand-drawn
+## breeds beyond the original tabby, each already recolored/repatterned
+## by hand rather than a tint, so unlike FUR_COLORS these are separate
+## textures, not a shared modulate). **Both multiply together** (breed
+## chosen independently of fur color, same as before) — 5 breeds x 4 fur
+## tints (see FUR_COLORS) = 20 distinct-looking cats from one adoption
+## roll, not just 5.
+## Every entry must share the original sprite_sheet.png's exact frame
+## layout (4 frames, walk-cycle poses in the same left-to-right order —
+## see set_breed()) since Visual's hframes/vframes/pixel_size are tuned
+## once for that layout and apply to whichever texture is currently
+## assigned. Index 0 is the original tabby (cat.tscn's own default
+## Visual.texture).
+const BREEDS: Array[Texture2D] = [
+	preload("res://assets/sprites/cats/sprite_sheet.png"),
+	preload("res://assets/sprites/cats/sprite_sheet_black.png"),
+	preload("res://assets/sprites/cats/sprite_sheet_calico.png"),
+	preload("res://assets/sprites/cats/sprite_sheet_pink.png"),
+	preload("res://assets/sprites/cats/sprite_sheet_spotted.png"),
 ]
 
 ## Visual's own designed rest height (cat.tscn's Visual.position.y) — the
@@ -44,15 +77,34 @@ const FUR_COLORS: Array[Color] = [
 ## uses for its own transient offset on the X axis.
 const _VISUAL_REST_Y: float = 0.05
 
+## Standing height of the sprite art itself (cat.tscn's Visual: pixel_size
+## 0.00054 * the sprite sheet's own 3000px frame height), used below to
+## place the HELD grab point at a specific *fraction* of the body instead
+## of a flat guess.
+const _STANDING_HEIGHT_METERS: float = 0.00054 * 3000.0
 ## While HELD, the sprite is pulled down from its normal standing
 ## position (which draws upward from the node origin, feet at the
 ## origin — see _VISUAL_REST_Y above) so the origin instead lands near
 ## the cat's neck/shoulders, with the body hanging below it — reads as
 ## picked up by the scruff of the neck, dangling, rather than the cat
-## just floating upright in midair. Paired with CatSelector's own
-## held_height (raised alongside this — see its doc comment) so the
-## dangling feet still clear the ground.
-const _HELD_VISUAL_Y: float = -0.6
+## just floating upright in midair. **Not a scale/resize fix** —
+## shrinking the sprite while HELD was tried and explicitly rejected (see
+## CatSelector's own doc comment for why).
+## **-0.6 was a guess, not derived from the sprite's own proportions (✅
+## fixed — reported as "the cursor grabs the cat by the feet instead of
+## the scruff of the neck")** — CatSelector's own fix (see its doc
+## comment) makes the *node origin* track the cursor's screen position
+## exactly, so wherever this constant places the origin *relative to the
+## sprite* is now, by construction, exactly where the cursor visually
+## grabs the cat. -0.6 put the origin only 37% up the standing body
+## (below the shoulders, near the belly) — nowhere close to the neck.
+## Recomputed as 80% of the sprite's own real standing height (see
+## _STANDING_HEIGHT_METERS above), so the origin — and therefore the
+## cursor — lands at the neck/shoulders regardless of the sprite's actual
+## pixel dimensions. CatSelector.held_height raised to match (needs to
+## clear this larger pull *and* leave the now much-lower-hanging feet
+## clear of the ground — see its own doc comment).
+const _HELD_VISUAL_Y: float = -0.8 * _STANDING_HEIGHT_METERS
 ## Gentle pendulum sway while held, selling the "dangling" read further.
 const _HELD_SWAY_DEGREES: float = 6.0
 const _HELD_SWAY_SPEED: float = 1.3
@@ -129,6 +181,9 @@ var _wander_timer: float = 0.0
 ## cat has, since Sprite3D.modulate itself has no reverse lookup back to
 ## an index.
 var fur_color_index: int = 0
+## Index into BREEDS, set by set_breed() — same "stored for save_entry()
+## to read back" reasoning as fur_color_index above.
+var breed_index: int = 0
 
 ## Lifetime stats, tracked purely for the end-of-game Employee Awards
 ## (see EmployeeAwards) — never reset mid-game, persisted across save/
@@ -185,7 +240,7 @@ func _process(delta: float) -> void:
 			if _follow_path(delta):
 				_arrive_at_destination()
 		State.TO_STATION:
-			if _follow_path(delta):
+			if _follow_path(delta, waypoint_tolerance):
 				_arrive_at_station()
 		State.STATIONED:
 			_tend_station(delta)
@@ -275,6 +330,53 @@ func set_fur_color(color_index: int) -> void:
 	_visual.modulate = FUR_COLORS[fur_color_index]
 
 
+## Weighted random pick from FUR_COLORS: 50% chance of index 0 (the
+## untinted default — every breed's own natural, hand-drawn coloring,
+## e.g. orange for the original tabby), the other 50% split evenly across
+## every actual tint. A plain `randi() % FUR_COLORS.size()` gave the
+## untinted look only a 1-in-`FUR_COLORS.size()` chance, same as any
+## single tint — reported as "not enough orange cats" once there were
+## enough tints for that to read as too rare. Applies the same 50/50
+## split to every breed, not just tabby — a black/calico/etc. cat's own
+## untinted look should be exactly as common as any of its overlays, not
+## just tabby's. Both random-fur-color call sites (CatShop, CatPlacer)
+## route through this rather than rolling their own weighting, so the
+## split can't drift out of sync between them.
+static func random_fur_color_index() -> int:
+	if randf() < 0.5:
+		return 0
+	return 1 + randi() % (FUR_COLORS.size() - 1)
+
+
+## Name -> (breed_index, fur_color_index) for cats whose look is pinned
+## to their name rather than rolled randomly — currently just the two
+## the player asked to always see early: Saber (a regular/untinted
+## spotted cat) and Chai (a brown spotted cat). `CatShop.
+## next_suggested_name()` guarantees one of these names is suggested for
+## each of the first two adoptions of a new game; both random-breed/fur
+## call sites (CatShop.buy_cat(), CatPlacer.begin_placing()) check this
+## map first — keyed by name, not by "which adoption number is this" —
+## so the guarantee holds however the name actually got there (the
+## default suggestion, or a player who happens to type one of these
+## names themselves) without either call site needing its own copy of
+## "is this one of the first two adoptions" bookkeeping.
+const SPECIAL_CATS: Dictionary[String, Vector2i] = {
+	"Saber": Vector2i(4, 0),
+	# fur index 3 (was 4 before FUR_COLORS' black tint was removed — see
+	# its own doc comment) — brown, unchanged in appearance, just reindexed.
+	"Chai": Vector2i(4, 3),
+}
+
+
+## Swaps the sprite to one of BREEDS. Index is clamped/wrapped, same
+## convention as set_fur_color(). Independent of fur color/modulate — a
+## breed's own art already has its coloring baked in, and modulate still
+## multiplies on top of it exactly as it does for the original tabby.
+func set_breed(new_breed_index: int) -> void:
+	breed_index = new_breed_index % BREEDS.size()
+	_visual.texture = BREEDS[breed_index]
+
+
 ## Renames the cat; visible on its floating name label immediately.
 func set_cat_name(new_name: String) -> void:
 	cat_name = new_name
@@ -351,6 +453,7 @@ func save_entry() -> CatSaveEntry:
 	entry.role = role
 	entry.position = position
 	entry.fur_color_index = fur_color_index
+	entry.breed_index = breed_index
 	entry.total_deliveries_completed = total_deliveries_completed
 	entry.total_delivery_seconds = total_delivery_seconds
 	entry.total_busy_seconds = total_busy_seconds
@@ -576,11 +679,21 @@ func _tend_wander(delta: float) -> void:
 		_wander_timer = randf_range(wander_delay_min, wander_delay_max)
 
 
-## A random in-bounds, unoccupied cell within wander_radius of the idle
+## A random in-bounds, unblocked cell within wander_radius of the idle
 ## anchor (not the cat's current position — see _idle_anchor). Retries a
-## few times against occupied/out-of-bounds cells before giving up and
-## returning the anchor cell itself (making _begin_wander() a harmless
+## few times against occupied/blocked/out-of-bounds cells before giving up
+## and returning the anchor cell itself (making _begin_wander() a harmless
 ## no-op for that cycle) rather than looping until it finds one.
+##
+## **Checks is_point_blocked(), not just is_cell_occupied() (✅ fixed —
+## reported as cats pathfinding outside the factory walls)** — the walled-off
+## area outside FactoryBounds' currently-unlocked rectangle has no Building
+## on it (is_cell_occupied() said it was free), but IS marked solid on the
+## pathfinding AStarGrid2D via set_point_blocked(). A wander target picked
+## there gave find_path_to_point() an unreachable destination — its AStar
+## search correctly found no route, but its "never get stuck with nothing"
+## fallback then just returned that raw point as a direct one-leg path,
+## walking the cat straight through the wall visual to get there.
 func _pick_wander_cell() -> Vector2i:
 	var anchor_cell: Vector2i = grid_manager.world_to_grid(_idle_anchor)
 	var radius_cells: int = maxi(1, int(wander_radius / grid_manager.cell_size))
@@ -589,7 +702,7 @@ func _pick_wander_cell() -> Vector2i:
 			randi_range(-radius_cells, radius_cells), randi_range(-radius_cells, radius_cells)
 		)
 		var candidate: Vector2i = anchor_cell + offset
-		if grid_manager.is_in_bounds(candidate) and not grid_manager.is_cell_occupied(candidate):
+		if grid_manager.is_in_bounds(candidate) and not grid_manager.is_point_blocked(candidate):
 			return candidate
 	return anchor_cell
 
@@ -615,9 +728,28 @@ func _begin_path_to_station(station: ProcessingBuilding) -> void:
 	_path.append(station.position + station.station_offset)
 
 
-## Walks the cached path leg by leg; true once the final waypoint
-## (the target building itself) is reached within interaction_distance.
-func _follow_path(delta: float) -> bool:
+## Walks the cached path leg by leg; true once the final waypoint (the
+## target building itself, or — for a station path, see
+## _begin_path_to_station() — the exact parked spot) is reached within
+## final_tolerance.
+##
+## **final_tolerance defaults to interaction_distance, but TO_STATION's
+## own call passes waypoint_tolerance instead (✅ fixed — reported as
+## cats walking toward a station, passing near it, then visibly
+## teleporting back to its corner)** — interaction_distance (1.3m) is
+## fine for TO_PICKUP/TO_DESTINATION, which never reposition the cat on
+## arrival; whatever's "close enough" is where the cat naturally stops,
+## no snap involved. _arrive_at_station() is different: it hard-sets
+## position to the exact parked spot on arrival, every time. Reusing the
+## same loose 1.3m tolerance for that final waypoint left up to 1.3m of
+## "walk near, then get snapped the rest of the way" even after
+## _begin_path_to_station() started appending the parked spot as a real
+## waypoint — that fix made the cat walk *toward* the right point, but
+## arrival still fired well before actually reaching it. waypoint_tolerance
+## (0.4m, already the tolerance every intermediate leg of any path hits
+## without incident) shrinks that residual snap to the same barely-visible
+## distance instead.
+func _follow_path(delta: float, final_tolerance: float = -1.0) -> bool:
 	if _path.is_empty():
 		return true
 	var is_last: bool = _path_index == _path.size() - 1
@@ -627,7 +759,8 @@ func _follow_path(delta: float) -> bool:
 	position = position.move_toward(target, move_speed * delta)
 	total_distance_meters += previous_position.distance_to(position)
 	_update_facing(position.x - previous_position.x)
-	var tolerance: float = interaction_distance if is_last else waypoint_tolerance
+	var last_tolerance: float = final_tolerance if final_tolerance >= 0.0 else interaction_distance
+	var tolerance: float = last_tolerance if is_last else waypoint_tolerance
 	if position.distance_to(target) > tolerance:
 		return false
 	if is_last:

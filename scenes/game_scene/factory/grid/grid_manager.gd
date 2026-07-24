@@ -25,6 +25,19 @@ const _NEIGHBOR_OFFSETS: Array[Vector2i] = [
 	Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0),
 ]
 
+## Extra AStarGrid2D weight_scale per occupied neighbor a free cell borders
+## (see _refresh_weight_scale()) — a *soft* nudge, not a hard block
+## (buildings are already solid, so a cat can never actually enter one);
+## this only makes the pathfinder prefer a route with more clearance when
+## one exists, without forbidding the tight aisle when it's the only
+## option ("cats walk through buildings a lot... on a tight factory may be
+## unavoidable" — player's own framing). Deliberately modest — a single
+## real extra step of detour (cost ~1.0, since `_astar.cell_size` is
+## `Vector2.ONE`) should usually still beat hugging one building-adjacent
+## cell, same "nudge, not dominate" spirit as DeliveryManager's own
+## cat_proximity_weight.
+const _NEAR_BUILDING_WEIGHT_PER_NEIGHBOR: float = 0.6
+
 
 func _ready() -> void:
 	_astar.region = Rect2i(Vector2i.ZERO, grid_size)
@@ -85,6 +98,18 @@ func is_cell_occupied(cell: Vector2i) -> bool:
 	return _occupied_cells.has(cell)
 
 
+## True for a building-occupied cell OR a cell FactoryBounds has marked
+## impassable outside the currently-unlocked area (see set_point_blocked())
+## — everything the pathfinding AStarGrid2D itself treats as solid. Callers
+## picking an arbitrary destination (not tied to an existing Building, which
+## can never be placed outside the unlocked area in the first place) should
+## check this, not just is_cell_occupied(), or they can hand
+## find_path_to_point() a target the AStar grid can never actually route
+## into.
+func is_point_blocked(cell: Vector2i) -> bool:
+	return _astar.is_point_solid(cell)
+
+
 ## The node occupying the cell, or null when free.
 func get_cell_occupant(cell: Vector2i) -> Node:
 	return _occupied_cells.get(cell)
@@ -93,11 +118,42 @@ func get_cell_occupant(cell: Vector2i) -> Node:
 func set_cell_occupant(cell: Vector2i, occupant: Node) -> void:
 	_occupied_cells[cell] = occupant
 	_astar.set_point_solid(cell, true)
+	_refresh_neighbor_weight_scales(cell)
 
 
 func clear_cell(cell: Vector2i) -> void:
 	_occupied_cells.erase(cell)
 	_astar.set_point_solid(cell, false)
+	_refresh_weight_scale(cell)
+	_refresh_neighbor_weight_scales(cell)
+
+
+## Recomputes `cell`'s own AStarGrid2D weight_scale from its CURRENT
+## occupied-neighbor count — a plain O(4) rescan rather than incrementally
+## tracked, so it can't drift stale from occupancy changes that happened
+## nearby while this specific cell itself was solid (and so skipped by
+## _refresh_neighbor_weight_scales() below) — cheap enough to just always
+## recompute fresh (only called on a placement/demolish, never per-frame).
+## No-op for a currently-occupied cell: weight_scale is meaningless for a
+## solid cell, AStarGrid2D never routes through it regardless.
+func _refresh_weight_scale(cell: Vector2i) -> void:
+	if is_cell_occupied(cell):
+		return
+	var occupied_neighbors: int = 0
+	for offset: Vector2i in _NEIGHBOR_OFFSETS:
+		if is_cell_occupied(cell + offset):
+			occupied_neighbors += 1
+	_astar.set_point_weight_scale(cell, 1.0 + occupied_neighbors * _NEAR_BUILDING_WEIGHT_PER_NEIGHBOR)
+
+
+## Refreshes every in-bounds neighbor of `cell` (a cell whose own occupancy
+## just changed) — each neighbor's own occupied-neighbor count just
+## changed along with it.
+func _refresh_neighbor_weight_scales(cell: Vector2i) -> void:
+	for offset: Vector2i in _NEIGHBOR_OFFSETS:
+		var neighbor: Vector2i = cell + offset
+		if is_in_bounds(neighbor):
+			_refresh_weight_scale(neighbor)
 
 
 ## Marks a cell impassable for pathfinding ONLY — unlike
@@ -133,7 +189,13 @@ func find_approach_path(from_world: Vector3, target: Building) -> Array[Vector3]
 ## A walkable path from a world position to another arbitrary world point
 ## (not tied to a Building) — used for cat wandering. Falls back to a
 ## direct route if no path exists, same fallback spirit as
-## find_approach_path() above.
+## find_approach_path() above. **Assumes to_world is itself a reachable
+## (in-bounds, unblocked) point** — the "no path found" fallback exists for
+## a start point temporarily boxed in, not to excuse an unreachable target;
+## a blocked to_world (e.g. outside FactoryBounds' unlocked area) makes the
+## fallback walk straight through whatever's blocking it instead. Callers
+## picking their own target (Cat._pick_wander_cell()) must check
+## is_point_blocked() themselves before calling this.
 func find_path_to_point(from_world: Vector3, to_world: Vector3) -> Array[Vector3]:
 	var start_cell: Vector2i = world_to_grid(from_world)
 	var end_cell: Vector2i = world_to_grid(to_world)
