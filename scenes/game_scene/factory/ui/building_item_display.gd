@@ -135,6 +135,42 @@ extends Node3D
 ## higher or lower than where its inputs rest. Negative means "same as
 ## the inputs".
 @export var output_surface_height_px: float = -1.0
+## When true the output gets a surface of its own rather than finishing
+## the input row, and is **centred** on it instead of right-aligned.
+##
+## Added for the Oven (✅ 2026-10-01, "for the oven could we have inputs
+## appear on top of the oven and their output be in the middle of the
+## oven section") — its raw ingredients belong on the hob and its baked
+## result belongs behind the glass, which is two surfaces, not one.
+## Centring rather than right-aligning is implied by the flag: giving the
+## output its own area and then shoving it against one edge of that area
+## would be a strange thing to ask for, so there is no separate alignment
+## knob to get wrong.
+##
+## It also stops the two competing for room. A shared surface has to fit
+## inputs *and* output inside one span, which is what forces the crowded
+## recipes through `_fit_scale()`; split apart, each side gets the whole
+## of its own surface.
+@export var output_has_own_surface: bool = false
+@export var output_surface_left_px: float = -40.0
+@export var output_surface_right_px: float = 40.0
+## How far an item lifts off its surface at the top of its hover, in the
+## same offset pixels. 0 disables the hover entirely.
+##
+## **The hover lifts from the resting line rather than swinging around
+## it** — a sine centred on the surface would put every item *below* its
+## counter for half of each cycle, which is exactly the "items look like
+## they are in the table instead of on the table" problem that
+## bottom-anchoring was added to fix. `_hover_lift()` maps the sine into
+## 0..1 so the bottom of the cycle is the item sitting on the surface and
+## the top is this far above it.
+@export_range(0.0, 12.0, 0.5) var hover_height_px: float = 3.0
+## Seconds for one full hover cycle.
+@export_range(0.5, 8.0, 0.1) var hover_seconds: float = 2.4
+## Radians of phase between neighbouring icons in a row, so a row of
+## items ripples instead of rising and falling as one rigid block.
+@export_range(0.0, 3.14, 0.05) var hover_phase_step: float = 0.7
+
 ## Floor on the automatic shrink a crowded row applies to fit (see
 ## _fit_scale()). Below this the row would read as tiny rather than
 ## tidy, so it stops shrinking and reports the overflow instead.
@@ -142,12 +178,33 @@ extends Node3D
 
 var _row_icons: Array[Sprite3D] = []
 var _output_icon: Sprite3D = null
+## Seconds accumulated for the hover cycle. Advanced in _process(), which
+## is switched off entirely whenever this building is showing no items —
+## a large factory has well over a hundred of these nodes and most of
+## them are empty most of the time.
+var _hover_time: float = 0.0
+## Per-building phase so neighbouring stations don't hover in lockstep.
+## Derived from the building's grid cell rather than randf(), so it is
+## stable across a save/load round-trip and identical for anyone
+## watching the same factory.
+var _hover_phase: float = 0.0
+
+## Key under which each icon keeps its resting offset — the position the
+## layout gave it, before any hover is added. Stored rather than
+## recomputed because _process() needs it every frame, and read back by
+## _rect_of() so the overlap/baseline checks measure the layout rather
+## than wherever the animation happens to be this frame.
+const _RESTING_OFFSET: StringName = &"resting_offset"
+## Distinct hover phases available to buildings — see _phase_for_cell().
+const _HOVER_PHASE_BUCKETS: int = 16
 
 const _GROUND_ANCHOR: Vector3 = Vector3(0, 0.05, 0)
 
 
 func _ready() -> void:
 	position = Vector3.ZERO
+	_hover_phase = _phase_for_cell(building.cell)
+	set_process(false)
 	building.input_inventory.changed.connect(_refresh)
 	building.output_inventory.changed.connect(_refresh)
 	_refresh()
@@ -186,7 +243,15 @@ func _current_output_items() -> Array[StringName]:
 ## narrow ones.
 func _layout(inputs: Array[StringName], outputs: Array[StringName]) -> void:
 	var has_output: bool = not outputs.is_empty()
-	var fit: float = _fit_scale(inputs, outputs)
+	# Sharing one surface is the common case: inputs from the left, the
+	# output flush to the right of the same span.
+	var shares_surface: bool = has_output and not output_has_own_surface
+
+	var row: Array[StringName] = inputs.duplicate()
+	if shares_surface:
+		row.append(outputs[0])
+	var fit: float = _fit_scale(row, surface_right_px - surface_left_px,
+			maxi(0, row.size() - 1))
 
 	var cursor: float = surface_left_px
 	for i: int in inputs.size():
@@ -201,42 +266,118 @@ func _layout(inputs: Array[StringName], outputs: Array[StringName]) -> void:
 	if not has_output:
 		if _output_icon != null:
 			_output_icon.hide()
+		_update_hover_processing()
 		return
 	if _output_icon == null:
 		_output_icon = _make_icon()
 		# Above every possible row slot's own priority (see _row_icon_at())
 		# — see class doc's render_priority note.
 		_output_icon.render_priority = _OUTPUT_RENDER_PRIORITY
-	_set_icon_texture(_output_icon, outputs[0], fit)
-	var out_w: float = _width_px(outputs[0], fit)
+
 	var out_height: float = output_surface_height_px if output_surface_height_px >= 0.0 \
 			else surface_height_px
-	_place(_output_icon, surface_right_px - out_w * 0.5, out_height)
+	if shares_surface:
+		_set_icon_texture(_output_icon, outputs[0], fit)
+		var shared_w: float = _width_px(outputs[0], fit)
+		_place(_output_icon, surface_right_px - shared_w * 0.5, out_height)
+	else:
+		var own_span: float = output_surface_right_px - output_surface_left_px
+		var out_fit: float = _fit_scale(outputs, own_span, 0)
+		_set_icon_texture(_output_icon, outputs[0], out_fit)
+		_place(_output_icon, (output_surface_left_px + output_surface_right_px) * 0.5,
+				out_height)
+	_update_hover_processing()
 
 
-## How much every icon in this row has to shrink for the whole row to sit
-## inside the surface without touching. 1.0 whenever it already fits,
-## which is the common case.
+## Gentle vertical hover, the "like items in minecraft" flourish — items
+## sitting on a counter read as placed rather than painted on once they
+## breathe a little.
+##
+## Each icon in a row is offset by `hover_phase_step` radians from its
+## neighbour so the row ripples rather than rising as one rigid block,
+## and each *building* carries its own `_hover_phase` so a bank of six
+## mixers doesn't pulse in unison.
+func _process(delta: float) -> void:
+	_hover_time += delta
+	var index: int = 0
+	for icon: Sprite3D in _row_icons:
+		if icon.visible:
+			_apply_hover(icon, index)
+		index += 1
+	if _output_icon != null and _output_icon.visible:
+		_apply_hover(_output_icon, index)
+
+
+## A stable hover phase for a grid cell.
+##
+## **Deliberately a structured pattern, not a hash.** What matters here
+## is the property a hash cannot promise: *every* immediate neighbour,
+## orthogonal or diagonal, gets a different phase, so a block of stations
+## built side by side can never pulse in unison. The steps 5 (per cell in
+## x) and 3 (per cell in y) are both non-zero mod 16, as are their sum
+## and difference, which is exactly what makes all eight neighbours
+## differ. A general-purpose hash was tried first and measured instead:
+## it collides on ~6% of adjacent pairs, which is simply chance, and the
+## first attempt (`x * 7 + y * 13`) was worse still — mod a power of two
+## it collapses to `4x` on the diagonal, putting (4,4) and (12,12) in
+## lockstep.
+##
+## Both multipliers being odd (hence invertible mod 16) also keeps the
+## phases evenly used rather than clumping on a few values.
+static func _phase_for_cell(cell: Vector2i) -> float:
+	var index: int = posmod(cell.x * 5 + cell.y * 3, _HOVER_PHASE_BUCKETS)
+	return float(index) * (TAU / float(_HOVER_PHASE_BUCKETS))
+
+
+func _update_hover_processing() -> void:
+	set_process(hover_height_px > 0.0 and _has_visible_icons())
+
+
+func _apply_hover(icon: Sprite3D, index: int) -> void:
+	var resting: Vector2 = icon.get_meta(_RESTING_OFFSET, icon.offset)
+	var phase: float = _hover_phase + float(index) * hover_phase_step
+	# sin maps to 0..1, not -1..1 — see hover_height_px for why the item
+	# must never sit below its resting line.
+	var lift: float = (sin(_hover_time * TAU / hover_seconds + phase) * 0.5 + 0.5) \
+			* hover_height_px
+	icon.offset = resting + Vector2(0.0, lift / _scale_for_icon(icon))
+
+
+## True while anything is actually on screen to animate. A factory can
+## hold well over a hundred of these nodes, most of them empty most of
+## the time, so an idle building costs nothing per frame.
+func _has_visible_icons() -> bool:
+	if _output_icon != null and _output_icon.visible:
+		return true
+	for icon: Sprite3D in _row_icons:
+		if icon.visible:
+			return true
+	return false
+
+
+## How much every icon sharing a surface has to shrink for them all to
+## sit inside it without touching. 1.0 whenever they already fit, which
+## is the common case.
 ##
 ## **This is what makes "items never overlap" a property of the code
-## rather than of per-building tuning.** Measured worst case is the
+## rather than of per-building tuning.** Measured worst case was the
 ## Oven's Meringue Pie at 130.2 offset-px of item across a 2m building
-## that is only ~133 wide, so on the crowded recipes there is genuinely
-## no arrangement at full size — something has to give, and a uniform
+## only ~133 wide, so on the crowded recipes there was genuinely no
+## arrangement at full size — something had to give, and a uniform
 ## shrink of the whole row keeps the items' relative sizes honest while
-## guaranteeing the fit. Gaps are deliberately excluded from the scaling:
-## shrinking the clear space along with the art would defeat the point.
-func _fit_scale(inputs: Array[StringName], outputs: Array[StringName]) -> float:
+## guaranteeing the fit. Gaps are deliberately excluded from the
+## scaling: shrinking the clear space would defeat the point.
+##
+## Takes the span and gap count rather than reading the exports, because
+## a building with `output_has_own_surface` calls it twice — once for the
+## input row and once for the lone output on its own surface.
+func _fit_scale(items: Array[StringName], span_px: float, gaps: int) -> float:
 	var natural: float = 0.0
-	for item: StringName in inputs:
+	for item: StringName in items:
 		natural += _width_px(item, 1.0)
-	if not outputs.is_empty():
-		natural += _width_px(outputs[0], 1.0)
 	if natural <= 0.0:
 		return 1.0
-	# One gap between each pair of inputs, plus one before the output.
-	var gaps: int = maxi(0, inputs.size() - 1) + (1 if not outputs.is_empty() and not inputs.is_empty() else 0)
-	var available: float = (surface_right_px - surface_left_px) - icon_gap_px * gaps
+	var available: float = span_px - icon_gap_px * float(gaps)
 	return clampf(available / natural, min_fit_scale, 1.0)
 
 
@@ -260,7 +401,9 @@ func _width_px(item: StringName, fit: float) -> float:
 func _place(icon: Sprite3D, x_px: float, surface_px: float) -> void:
 	var scale: float = _scale_for_icon(icon)
 	var half_height: float = icon.texture.get_height() * 0.5
-	icon.offset = Vector2(x_px / scale, surface_px / scale + half_height)
+	var resting := Vector2(x_px / scale, surface_px / scale + half_height)
+	icon.set_meta(_RESTING_OFFSET, resting)
+	icon.offset = resting
 
 
 ## The rectangles every visible icon currently occupies, in shared
@@ -279,7 +422,10 @@ func icon_rects() -> Array[Rect2]:
 
 func _rect_of(icon: Sprite3D) -> Rect2:
 	var scale: float = _scale_for_icon(icon)
-	var centre: Vector2 = icon.offset * scale
+	# The resting offset, never the live one — otherwise the hover would
+	# make the showcase's baseline check fail on a perfectly good layout
+	# simply because it sampled mid-cycle.
+	var centre: Vector2 = icon.get_meta(_RESTING_OFFSET, icon.offset) * scale
 	var size := Vector2(icon.texture.get_width(), icon.texture.get_height()) * scale
 	return Rect2(centre - size * 0.5, size)
 
