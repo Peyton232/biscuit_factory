@@ -145,6 +145,23 @@ const _CARRIED_ITEM_HAND_HEIGHT_METERS: float = 0.9
 @export var station_bounce_height: float = 0.05
 ## Bounce cycles per second while stationed.
 @export var station_bounce_speed: float = 1.6
+## How long a cat sits genuinely IDLE (no job, not mid-wander-leg) before
+## it visibly settles into a nap — "implement cat naps" playtest
+## feedback, done as a purely cosmetic idle variant rather than a new
+## sprite/animation (no nap art exists): a slow settle-down plus a gentle
+## breathing bob, using the same resting frame IDLE already holds on (see
+## _update_walk_animation()). Shorter than wander_delay_min so a cat
+## reliably settles at least a little before its next wander leg breaks
+## the pose.
+@export var nap_delay: float = 1.5
+## How far the cat's visual sinks once napping, in meters — a gentle
+## "settling down" rather than a sleep pose (no art for one exists).
+@export var nap_settle_height: float = 0.03
+## Amplitude/speed of the slow breathing bob layered on top of the settle
+## — much smaller and slower than station_bounce_height/_speed so it
+## never reads as "busy," just resting.
+@export var nap_breath_height: float = 0.015
+@export var nap_breath_speed: float = 1.0
 
 @export_group("Wander")
 ## How far from its idle spot a cat wanders, in meters. Keeps it milling
@@ -170,6 +187,11 @@ var _upset_timer: float = 0.0
 var _station_idle_timer: float = 0.0
 var _anim_timer: float = 0.0
 var _station_bounce_timer: float = 0.0
+## Continuous time spent in State.IDLE this stretch — resets the instant
+## the cat leaves IDLE (a new wander leg, a job appearing, etc.), so
+## napping only ever shows up while genuinely standing still with
+## nothing to do. See nap_delay/_update_idle_nap().
+var _idle_still_seconds: float = 0.0
 var _held_sway_timer: float = 0.0
 ## World position the cat last had actual work finish at; wander targets
 ## are picked near this, not near wherever the previous wander leg ended,
@@ -220,10 +242,96 @@ var _current_delivery_seconds: float = 0.0
 @onready var _visual: Sprite3D = $Visual
 @onready var _carried_item: Sprite3D = $CarriedItem
 @onready var _name_label: Label3D = $NameLabel
+@onready var _collar: Sprite3D = $Visual/Collar
+
+## **Placeholder role indicator: a solid colored bar across the cat's
+## neck**, tinted per role from the shared RoleColors table — "the
+## colored dots I think we could bring that back as a colored collar on
+## the cats... for now just use a solid color line across the neck as a
+## placeholder". Replaces the over-the-head dot badge removed earlier
+## this day (same table, same "one white texture, modulate for color"
+## idiom set_fur_color() already uses); the dots read as UI stuck on top
+## of the art, a collar reads as part of the cat.
+##
+## **It is a child of `Visual`, not of the Cat root**, so it inherits
+## every animation already applied to that node — the stationed bob, the
+## nap settle/breathe, the UPSET shake, and the lower hang while held.
+## Parented to the root instead, it would visibly detach from the cat
+## the moment any of those ran.
+##
+## **Everything here is positioned with the sprite's own `offset`, in the
+## billboard's camera-facing plane — NOT with the node's `position`.**
+## This is the trap SpritePicker's class doc warns about, walked into
+## anyway on the first attempt: a billboarded Sprite3D rises along the
+## CAMERA's up axis, not world up. A collar placed at a world-space
+## `position.y` above the cat therefore drifts down and back across the
+## drawn sprite under this game's tilted camera — it rendered around the
+## cat's hips instead of its neck ("that collar is nowhere near his
+## neck"). `offset` moves the quad within the same plane the cat sprite
+## itself is drawn in, so the two stay locked together at any camera
+## angle. Both axes use it, for the same reason.
+##
+## Every number below was measured off the sprite sheet rather than
+## guessed:
+## - **Height**: the opaque width per row has a clear local minimum 32%
+##   of the way down the frame, between the head mass above and the body
+##   below — that pinch is the neck. The quad's bottom edge sits exactly
+##   at the Visual node's origin (its own offset.y of 1500px happens to
+##   equal half the frame), so "up from the feet" is measured straight
+##   from there: 0.68 x 1.62m = 1.10m.
+## - **Width**: at that row the cat itself spans only 0.28-0.32 of the
+##   frame across all four walk frames. (A naive "widest opaque span"
+##   reads ~0.47 because it swallows the *tail*, which is a separate
+##   blob further right; the first attempt used that and the collar stuck
+##   out well past both sides of the cat.)
+## - **Offset**: that span's centre sits slightly left of the frame's
+##   centre (-0.007 to -0.028 of frame width, depending on frame), so the
+##   bar needs nudging left to sit on the neck rather than beside it.
+## All three are exported because lining a placeholder up against real
+## art is exactly what wants tweaking in the inspector, not in code.
+## Placeholder audio: there is no purr or meow in assets/sounds yet, so
+## this borrows an existing soft UI chime. Same stand-in convention the
+## achievement icons use — swap the path when real cat audio arrives.
+const _PET_SOUND: AudioStream = preload("res://assets/sounds/effects/bing.wav")
+const _PET_HEART_COLOR: Color = Color(1.0, 0.45, 0.62)
+## Spawned above the cat's head, clear of the name label.
+const _PET_HEART_HEIGHT: float = 1.9
+
+const _COLLAR_TEXTURE_WIDTH_PX: int = 64
+## Thickness follows width via this aspect (the collar is one shared
+## texture, and a billboarded Sprite3D discards node scale, so the bar's
+## proportions have to live in the texture itself). Change this ratio,
+## not a scale, to make the band chunkier.
+const _COLLAR_TEXTURE_HEIGHT_PX: int = 7
+static var _collar_texture: Texture2D = null
+## Seconds left in the pet hop; 0 when not hopping.
+var _pet_timer: float = 0.0
+
+@export_group("Petting")
+## How long the happy hop lasts when the cat is petted.
+@export_range(0.05, 1.5, 0.05) var pet_hop_seconds: float = 0.35
+## How high that hop lifts the sprite, in metres.
+@export_range(0.0, 1.0, 0.01) var pet_hop_height: float = 0.22
+
+@export_group("Role Collar")
+## Height of the collar up the cat's sprite from its feet, in metres,
+## measured along the sprite's own (billboarded) up axis rather than
+## world up — see the notes above. Default is the sprite's neck pinch.
+@export_range(0.0, 2.0, 0.005) var collar_height: float = 1.10
+## Width of the collar bar in metres. The neck measures ~0.49m across;
+## this sits a touch wider so the band reads as sitting *around* it.
+@export_range(0.05, 2.0, 0.01) var collar_width: float = 0.50
+## Sideways nudge in metres, positive right. The cat is not centred in
+## its own frame (see the notes above). Applied via the sprite's `offset`
+## rather than the node's `position.x`: offset moves the quad within its
+## own billboarded, camera-facing plane, so it stays put relative to the
+## cat whatever the camera does, which a world-space position.x would not.
+@export_range(-0.5, 0.5, 0.005) var collar_offset_x: float = -0.023
 
 
 func _ready() -> void:
 	_update_name_label()
+	_setup_collar()
 	_idle_anchor = position
 	_wander_timer = randf_range(wander_delay_min, wander_delay_max)
 	roles_held[role] = true
@@ -252,7 +360,9 @@ func _process(delta: float) -> void:
 			_tend_wander(delta)
 	_update_walk_animation(delta)
 	_update_station_bounce(delta)
+	_update_idle_nap(delta)
 	_update_held_visual(delta)
+	_update_pet_hop(delta)
 	_update_lifetime_timers(delta)
 
 
@@ -304,6 +414,24 @@ func _update_station_bounce(delta: float) -> void:
 	_station_bounce_timer += delta
 	var lift: float = (sin(_station_bounce_timer * station_bounce_speed * TAU) + 1.0) * 0.5
 	_visual.position.y = _VISUAL_REST_Y + lift * station_bounce_height
+
+
+## Settles a genuinely-idle cat into a small "nap" once it's stood still
+## for nap_delay seconds — see nap_delay's own doc comment for why this
+## is a cosmetic settle+breathe rather than a new sleep pose. Runs after
+## _update_station_bounce() specifically so its own unconditional
+## "reset to _VISUAL_REST_Y whenever not stationed" (which also fires
+## during IDLE) doesn't stomp this.
+func _update_idle_nap(delta: float) -> void:
+	if _state != State.IDLE:
+		_idle_still_seconds = 0.0
+		return
+	_idle_still_seconds += delta
+	var napping_for: float = _idle_still_seconds - nap_delay
+	if napping_for < 0.0:
+		return
+	var breath: float = sin(napping_for * nap_breath_speed * TAU) * nap_breath_height
+	_visual.position.y = _VISUAL_REST_Y - nap_settle_height + breath
 
 
 ## While HELD, pulls the sprite down (see _HELD_VISUAL_Y) so it reads as
@@ -391,7 +519,77 @@ func set_role(new_role: Role) -> void:
 	role = new_role
 	roles_held[new_role] = true
 	_update_name_label()
+	_update_collar()
 	_enter_idle()
+
+
+## Sizes and positions the collar from the exports, then tints it.
+##
+## Two Godot constraints shape this. Width goes through `pixel_size`
+## rather than node scale, because a billboarded Sprite3D throws node
+## scale away (the billboard basis replaces it) — which is also why the
+## bar's aspect has to live in the texture. And *both* position axes go
+## through `offset`, which moves the quad inside the billboard's own
+## camera-facing plane, rather than through `position`, which would move
+## it in world space and slide it off the cat under a tilted camera.
+func _setup_collar() -> void:
+	if _collar_texture == null:
+		_collar_texture = _make_collar_texture()
+	_collar.texture = _collar_texture
+	# Sized from the texture's ACTUAL width, not the placeholder constant,
+	# so dropping in real collar art at any resolution keeps the collar
+	# exactly `collar_width` metres across instead of silently rescaling
+	# it. Its thickness then follows the art's own aspect ratio.
+	_collar.pixel_size = collar_width / float(maxi(1, _collar.texture.get_width()))
+	# offset is in texture pixels, scaled by pixel_size. The collar node
+	# shares Visual's origin, and Visual's quad starts at that origin, so
+	# collar_height is measured straight up from it.
+	_collar.offset = Vector2(collar_offset_x, collar_height) / _collar.pixel_size
+	_update_collar()
+
+
+func _update_collar() -> void:
+	_collar.modulate = RoleColors.color_for(role)
+
+
+## One shared white bar, tinted per cat via modulate. Deliberately a flat
+## rectangle with hard edges: this is the placeholder the collar art will
+## replace, and a soft/rounded placeholder would invite being left in.
+static func _make_collar_texture() -> Texture2D:
+	var image := Image.create(_COLLAR_TEXTURE_WIDTH_PX, _COLLAR_TEXTURE_HEIGHT_PX,
+			false, Image.FORMAT_RGBA8)
+	image.fill(Color.WHITE)
+	return ImageTexture.create_from_image(image)
+
+
+## Player affection, on request ("we need a way to pet cats"). Purely a
+## moment: a heart, a sound, and a happy hop. No stat, no gameplay
+## effect, nothing saved — deliberately, because the obvious follow-ups
+## (a "pet every cat" achievement, a happiness stat that feeds
+## production) are design decisions nobody has made yet, and inventing
+## persistent state for them now would be guessing.
+##
+## Safe to spam: each press restarts the hop and adds another heart,
+## which is what repeatedly petting a cat should look like.
+func pet() -> void:
+	_pet_timer = pet_hop_seconds
+	FloatingText.spawn(get_parent(), global_position + Vector3.UP * _PET_HEART_HEIGHT,
+			"♥", _PET_HEART_COLOR)
+	Sfx.spawn(self, _PET_SOUND)
+
+
+## A single up-and-down arc over pet_hop_seconds. Runs LAST in the visual
+## chain, after the station bounce / nap / held handlers, for the same
+## reason _update_idle_nap() runs after _update_station_bounce(): that
+## one unconditionally resets _visual.position.y whenever the cat isn't
+## stationed, so anything layered on top has to come after it or get
+## stomped the same frame.
+func _update_pet_hop(delta: float) -> void:
+	if _pet_timer <= 0.0:
+		return
+	_pet_timer = maxf(_pet_timer - delta, 0.0)
+	var progress: float = 1.0 - (_pet_timer / pet_hop_seconds)
+	_visual.position.y += sin(progress * PI) * pet_hop_height
 
 
 ## Called by CatSelector when the player picks this cat up. Drops any
@@ -426,10 +624,33 @@ func walk_to(target_position: Vector3) -> void:
 
 
 ## Whether this cat is currently parked at (and staffing) a station.
-## CatSelector uses this to shrink its click pick radius for stationed
-## cats specifically — see its own doc comment for why.
 func is_stationed() -> bool:
 	return _state == State.STATIONED
+
+
+## Whether this cat is pinned to a specific spot and must not be nudged
+## by CatSeparation: parked at a station (anchored to that building's own
+## station_offset, with its bounce/nap animation keyed to it) or held by
+## the player (following the cursor). Such a cat still takes up space and
+## still pushes others away — it just doesn't move itself.
+func is_anchored() -> bool:
+	return _state == State.STATIONED or _state == State.HELD
+
+
+## The station this cat is currently parked at, or null. Read by
+## CatSelector, which skips a stationed cat wherever its own station is
+## drawn in front of it, so a parked cat never eats a click meant for
+## the building it's standing behind — see CatSelector's class doc.
+func station() -> ProcessingBuilding:
+	return _station if _state == State.STATIONED else null
+
+
+## The billboard sprite this cat is drawn as. Public because two systems
+## outside the cat need the sprite itself, not a copy of the knowledge of
+## where it lives: CatSelector hit-tests clicks against it (SpritePicker)
+## and HoverHighlight hangs its outline shader on it.
+func visual() -> Sprite3D:
+	return _visual
 
 
 ## Whether this cat is genuinely free (not already working toward/at a

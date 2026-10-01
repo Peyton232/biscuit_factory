@@ -18,13 +18,13 @@ extends Node
 ## watching the real cat walk into its real (already-placed) factory
 ## reads better than color-card placeholders ever did.
 ##
-## Skippable via the message's Skip button or ui_cancel — either jumps
+## Skippable via ui_cancel (ESC) — that jumps
 ## straight to the reveal, same convention scrolling_credits.gd already
 ## uses for "ui_cancel skips to the end."
 
 ## Emitted the moment the player has moved past this opening's very first
 ## beat — either by pressing Next on the "Every great bakery starts
-## somewhere..." message, or by pressing Skip at any point during the
+## somewhere..." message, or by pressing ESC at any point during the
 ## sequence (which bypasses the message entirely; skipping clearly means
 ## "let me into the game," so it counts the same as clicking through it).
 ## Guaranteed to fire exactly once per play() call regardless of path,
@@ -73,7 +73,6 @@ const _FADE_SECONDS: float = 0.8
 @onready var _message_panel: PanelContainer = $Overlay/MessagePanel
 @onready var _message_label: Label = $Overlay/MessagePanel/Margin/Layout/TextLabel
 @onready var _next_button: Button = $Overlay/MessagePanel/Margin/Layout/Buttons/NextButton
-@onready var _skip_button: Button = $Overlay/MessagePanel/Margin/Layout/Buttons/SkipButton
 
 var _cat: Cat = null
 var _rest_position: Vector3
@@ -89,7 +88,6 @@ var _playing: bool = false
 func _ready() -> void:
 	_message_panel.hide()
 	_next_button.pressed.connect(_on_next_pressed)
-	_skip_button.pressed.connect(_skip)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -102,6 +100,14 @@ func _on_next_pressed() -> void:
 	_request_next()
 
 
+## Still reachable, just not as a button (✅ 2026-09-17 — "the welcome to
+## the bakery says next and skip, let's have just the next button since
+## they do the same thing"). By the time the message panel is on screen
+## the walk-in has already finished, so Skip and Next did literally the
+## same thing there, differing only in whether the panel's fade-out was
+## animated. ESC keeps the genuine skip — the one that cuts the walk-in
+## short while it is still playing, which no button ever offered anyway
+## (the panel only appears once the walk is over).
 func _skip() -> void:
 	_skipped = true
 	_request_next()

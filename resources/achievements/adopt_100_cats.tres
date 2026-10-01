@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/achievements/achievement_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = &"adopt_100_cats"
+display_name = "The Hundred"
+description = "Adopt 100 cats."
+category = 1
+icon = null
+hidden = false
+sort_order = 2
+target = 100
+item = &""
+progress_format = 1
+steam_api_name_override = ""

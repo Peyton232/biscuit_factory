@@ -168,6 +168,30 @@ func unlocked_count() -> int:
 	return _unlocked.size()
 
 
+## Whether every recipe in the game is unlocked, for the "Full Cookbook"
+## achievement. Derived from the shop's own tables rather than a
+## hardcoded total: every recipe is either directly purchasable
+## (shop_prices), bundled with one that is (INTERNALLY_UNLOCKS), or free
+## from the start (default_unlocked) — so buying every shop_prices entry
+## necessarily unlocks all of them, and "no shop recipe left locked" is
+## the same question, asked cheaply.
+func every_recipe_unlocked() -> bool:
+	return purchasable_unlocked_count() == shop_prices.size()
+
+
+## How many purchasable recipes are unlocked, for the "Full Cookbook"
+## achievement's progress readout ("12 / 16"). Counts shop_prices
+## entries specifically, not unlocked_count() — that one also counts
+## default-unlocked and bundled intermediates, so it would never reach
+## shop_prices.size() and the progress would read as stuck.
+func purchasable_unlocked_count() -> int:
+	var count: int = 0
+	for recipe: Recipe in shop_prices:
+		if is_unlocked(recipe):
+			count += 1
+	return count
+
+
 func price_for(recipe: Recipe) -> int:
 	return shop_prices.get(recipe, 0)
 

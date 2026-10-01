@@ -16,6 +16,7 @@ const _PILL_BUTTON_TEXT_COLOR: Color = Color(0.18, 0.13, 0.09, 1)
 @export var recipe_book_scene : PackedScene
 @export var building_book_scene : PackedScene
 @export var stats_scene : PackedScene
+@export var achievements_scene : PackedScene
 ## Path to a main menu scene.
 ## Will attempt to read from AppConfig if left empty.
 @export_file("*.tscn") var main_menu_scene_path : String
@@ -39,6 +40,7 @@ const _PILL_BUTTON_TEXT_COLOR: Color = Color(0.18, 0.13, 0.09, 1)
 @onready var recipes_button : Button = _make_recipes_button()
 @onready var buildings_button : Button = _make_buildings_button()
 @onready var stats_button : Button = _make_stats_button()
+@onready var achievements_button : Button = _make_achievements_button()
 
 var open_window : Node
 var _ignore_first_cancel : bool = false
@@ -116,6 +118,21 @@ func _make_stats_button() -> Button:
 	button.pressed.connect(_on_stats_button_pressed)
 	%MenuButtons.add_child(button)
 	%MenuButtons.move_child(button, buildings_button.get_index() + 1)
+	return button
+
+
+func _make_achievements_button() -> Button:
+	# Same reasoning/idempotency as _make_recipes_button() above.
+	var existing: Button = %MenuButtons.get_node_or_null("AchievementsButton") as Button
+	if existing != null:
+		return existing
+	var button := Button.new()
+	button.name = "AchievementsButton"
+	button.text = "Achievements"
+	_style_pill_button(button)
+	button.pressed.connect(_on_achievements_button_pressed)
+	%MenuButtons.add_child(button)
+	%MenuButtons.move_child(button, stats_button.get_index() + 1)
 	return button
 
 
@@ -213,6 +230,9 @@ func _on_buildings_button_pressed() -> void:
 
 func _on_stats_button_pressed() -> void:
 	_load_and_show_menu(stats_scene)
+
+func _on_achievements_button_pressed() -> void:
+	_load_and_show_menu(achievements_scene)
 
 func _on_main_menu_button_pressed() -> void:
 	_show_window(main_menu_confirmation)

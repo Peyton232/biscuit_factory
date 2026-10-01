@@ -41,7 +41,9 @@ func _ready() -> void:
 	_cancel_button.pressed.connect(_on_cancel_pressed)
 
 
+## See CatNamingDialog.open() for why the fade is cancelled here.
 func open(cat_shop: CatShop) -> void:
+	UiFade.cancel(self)
 	_cat_shop = cat_shop
 	_quantity_spin.value = 1
 	_role_delivery_button.button_pressed = true
@@ -59,7 +61,7 @@ func _update_cost_label() -> void:
 
 
 func _on_confirm_pressed() -> void:
-	hide()
+	UiFade.out(self)
 	batch_confirmed.emit(int(_quantity_spin.value), _selected_role())
 
 
@@ -76,5 +78,5 @@ func _selected_role() -> Cat.Role:
 
 
 func _on_cancel_pressed() -> void:
-	hide()
+	UiFade.out(self)
 	cancelled.emit()

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/achievements/achievement_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = &"speed_baker"
+display_name = "Speed Baker"
+description = "Finish the game in under an hour."
+category = 3
+icon = null
+hidden = false
+sort_order = 0
+target = 3600
+item = &""
+progress_format = 0
+steam_api_name_override = ""

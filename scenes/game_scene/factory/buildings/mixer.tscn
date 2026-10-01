@@ -70,8 +70,10 @@ building = NodePath("..")
 
 [node name="ItemDisplay" type="Node3D" parent="." node_paths=PackedStringArray("building")]
 script = ExtResource("14_itemdisplay")
-height_offset_px = 109.0
 building = NodePath("..")
+surface_height_px = 109.0
+surface_left_px = -53.0
+surface_right_px = 56.0
 
 [node name="StationSound" type="Node3D" parent="." node_paths=PackedStringArray("building")]
 script = ExtResource("19_stationsound")

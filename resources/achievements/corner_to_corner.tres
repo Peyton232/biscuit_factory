@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/achievements/achievement_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = &"corner_to_corner"
+display_name = "The Long Commute"
+description = "Have one cat walk the full diagonal of your factory, corner to corner."
+category = 3
+icon = null
+hidden = false
+sort_order = 5
+target = 0
+item = &""
+progress_format = 0
+steam_api_name_override = ""

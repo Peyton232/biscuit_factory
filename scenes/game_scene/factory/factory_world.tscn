@@ -31,6 +31,8 @@
 [ext_resource type="Resource" uid="uid://dujbxyabsv5ns" path="res://resources/buildings/decorating_table.tres" id="59_defdecorate"]
 [ext_resource type="PackedScene" path="res://scenes/game_scene/factory/tutorial/tutorial_overlay.tscn" id="60_tutorialoverlay"]
 [ext_resource type="Script" uid="uid://c4w44yeooaojm" path="res://scenes/game_scene/factory/tutorial/tutorial_manager.gd" id="61_tutorialmgr"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/achievement_tracker.gd" id="116_achievetracker"]
+[ext_resource type="Script" path="res://scenes/game_scene/factory/cats/cat_separation.gd" id="117_catsep"]
 [ext_resource type="Script" uid="uid://b3kbtddu1ir43" path="res://scenes/game_scene/factory/logistics/lifetime_stats.gd" id="62_lifetimestats"]
 [ext_resource type="Script" uid="uid://dnfkgffd5ktes" path="res://scenes/game_scene/factory/logistics/tier_manager.gd" id="63_tiermgr"]
 [ext_resource type="Resource" path="res://resources/recipes/whipped_cream.tres" id="70_whippedcream"]
@@ -306,11 +308,12 @@ recipe_shop = NodePath("../RecipeShop")
 tier_manager = NodePath("../TierManager")
 pause_controller = NodePath("../PauseMenuController")
 
-[node name="BuildingSelector" type="Node" parent="." unique_id=-1607515393 node_paths=PackedStringArray("grid_cursor", "grid_manager", "placer")]
+[node name="BuildingSelector" type="Node" parent="." unique_id=-1607515393 node_paths=PackedStringArray("grid_cursor", "grid_manager", "placer", "buildings_root")]
 script = ExtResource("18_buildingselector")
 grid_cursor = NodePath("../GridCursor")
 grid_manager = NodePath("../GridManager")
 placer = NodePath("../BuildingPlacer")
+buildings_root = NodePath("../Buildings")
 
 [node name="CatSelector" type="Node" parent="." unique_id=1299935152 node_paths=PackedStringArray("grid_cursor", "placer", "cats_root")]
 script = ExtResource("17_catselector")
@@ -318,11 +321,10 @@ grid_cursor = NodePath("../GridCursor")
 placer = NodePath("../BuildingPlacer")
 cats_root = NodePath("../Cats")
 
-[node name="HoverHighlight" type="Node" parent="." unique_id=2100000012 node_paths=PackedStringArray("cat_selector", "grid_cursor", "grid_manager", "placer")]
+[node name="HoverHighlight" type="Node" parent="." unique_id=2100000012 node_paths=PackedStringArray("cat_selector", "building_selector", "placer")]
 script = ExtResource("108_hoverhighlight")
 cat_selector = NodePath("../CatSelector")
-grid_cursor = NodePath("../GridCursor")
-grid_manager = NodePath("../GridManager")
+building_selector = NodePath("../BuildingSelector")
 placer = NodePath("../BuildingPlacer")
 
 [node name="CatPlacer" type="Node3D" parent="." unique_id=2100000006 node_paths=PackedStringArray("grid_cursor", "cat_shop", "building_placer")]
@@ -341,7 +343,7 @@ factory_bounds = NodePath("../FactoryBounds")
 
 [node name="TutorialOverlay" parent="." unique_id=2100000002 instance=ExtResource("60_tutorialoverlay")]
 
-[node name="TutorialManager" type="Node" parent="." unique_id=2100000003 node_paths=PackedStringArray("overlay", "factory_hud", "buildings_root", "cats_root", "economy", "recipe_shop", "tier_manager")]
+[node name="TutorialManager" type="Node" parent="." unique_id=2100000003 node_paths=PackedStringArray("overlay", "factory_hud", "buildings_root", "cats_root", "economy", "recipe_shop", "tier_manager", "building_placer")]
 script = ExtResource("61_tutorialmgr")
 overlay = NodePath("../TutorialOverlay")
 factory_hud = NodePath("../FactoryHud")
@@ -350,6 +352,22 @@ cats_root = NodePath("../Cats")
 economy = NodePath("../Economy")
 recipe_shop = NodePath("../RecipeShop")
 tier_manager = NodePath("../TierManager")
+building_placer = NodePath("../BuildingPlacer")
+
+[node name="AchievementTracker" type="Node" parent="." unique_id=2100000042 node_paths=PackedStringArray("lifetime_stats", "tier_manager", "recipe_shop", "tutorial_manager", "factory_bounds", "cats_root", "buildings_root")]
+script = ExtResource("116_achievetracker")
+lifetime_stats = NodePath("../LifetimeStats")
+tier_manager = NodePath("../TierManager")
+recipe_shop = NodePath("../RecipeShop")
+tutorial_manager = NodePath("../TutorialManager")
+factory_bounds = NodePath("../FactoryBounds")
+cats_root = NodePath("../Cats")
+buildings_root = NodePath("../Buildings")
+
+[node name="CatSeparation" type="Node" parent="." unique_id=2100000043 node_paths=PackedStringArray("cats_root", "factory_bounds")]
+script = ExtResource("117_catsep")
+cats_root = NodePath("../Cats")
+factory_bounds = NodePath("../FactoryBounds")
 
 [node name="VictorySequence" parent="." unique_id=2100000010 node_paths=PackedStringArray("camera_rig", "factory_hud", "factory_bounds", "lifetime_stats", "recipe_shop", "tier_manager", "buildings_root", "cats_root") instance=ExtResource("106_victory")]
 camera_rig = NodePath("../CameraRig")

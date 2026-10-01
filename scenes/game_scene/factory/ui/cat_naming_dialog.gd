@@ -40,7 +40,11 @@ func _ready() -> void:
 
 ## Opens the dialog for a fresh adoption at the given cost, pre-filled
 ## with the given suggested name (see class doc above) rather than blank.
+## UiFade.cancel() first: this dialog now fades itself out on confirm or
+## cancel, and reopening during that fade would otherwise inherit the
+## in-flight tween and vanish again a moment later.
 func open(cost: int, suggested_name: String) -> void:
+	UiFade.cancel(self)
 	_cost_label.text = "Adopt Cat — $%d" % cost
 	_name_edit.text = suggested_name
 	_role_delivery_button.button_pressed = true
@@ -64,7 +68,7 @@ func _on_confirm_pressed() -> void:
 
 
 func _confirm(raw_name: String) -> void:
-	hide()
+	UiFade.out(self)
 	name_confirmed.emit(raw_name.strip_edges(), _selected_role())
 
 
@@ -81,5 +85,5 @@ func _selected_role() -> Cat.Role:
 
 
 func _on_cancel_pressed() -> void:
-	hide()
+	UiFade.out(self)
 	cancelled.emit()

@@ -1,0 +1,28 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://crndfbb22ri4s" path="res://addons/maaacks_game_template/base/nodes/windows/overlaid_window_scene_container.tscn" id="1_shell"]
+[ext_resource type="PackedScene" path="res://scenes/achievements/achievements_page.tscn" id="2_page"]
+
+[node name="PauseMenuAchievementsOverlaidWindow" unique_id=1370819699 instance=ExtResource("1_shell")]
+process_mode = 3
+anchors_preset = 15
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+packed_scene = ExtResource("2_page")
+title_visible = false
+
+[node name="TitleMargin" parent="ContentContainer/BoxContainer" parent_id_path=PackedInt32Array(394030069) index="0" unique_id=1262022917]
+visible = false
+
+[node name="TitleLabel" parent="ContentContainer/BoxContainer/TitleMargin/BoxContainer" parent_id_path=PackedInt32Array(1788474031) index="0" unique_id=1049966062]
+text = "Achievements"
+
+[node name="CloseButton" parent="ContentContainer/BoxContainer/MenuButtonsMargin/MenuButtons" parent_id_path=PackedInt32Array(1371114575) index="0" unique_id=314526103]
+size_flags_horizontal = 0
+text = "Back"

@@ -73,6 +73,15 @@ const _CONGRATULATIONS_DISPLAY_SECONDS: float = 2.5
 ## Played once the "Congratulations!" beat shows, right before the
 ## credits (victory_sequence.play()) roll — see class doc.
 const _ENDING_SOUND: AudioStream = preload("res://assets/sounds/effects/ending.wav")
+## How long the tier music takes to duck down before _ENDING_SOUND plays,
+## and to swell back up once it finishes — see _play_ending_sound().
+## Reported as "ending.wav gets buried under the still-playing tier
+## music"; same duration used for both directions.
+const _ENDING_DUCK_SECONDS: float = 3.0
+## How far the tier music ducks while _ENDING_SOUND plays, as a fraction
+## of its own current volume — halved rather than silenced so the loop
+## doesn't feel like it stopped, just steps back for the sting.
+const _ENDING_DUCK_VOLUME: float = 0.5
 
 ## True once Tier Winner has ever been reached this session or restored
 ## from a loaded save — see class doc and FactorySaveData.completed.
@@ -191,7 +200,10 @@ func _run_game_complete_sequence() -> void:
 	SaveManager.save_current_game(capture_save_data())
 
 	dialog.show_message_no_button("Congratulations!")
-	Sfx.spawn(self, _ENDING_SOUND)
+	# Fire-and-forget, same idiom as opening_sequence.play() above — the
+	# beat's own timer below isn't tied to this, so a missing
+	# tier_music_controller still just plays the sound with no ducking.
+	_play_ending_sound()
 	await get_tree().create_timer(_CONGRATULATIONS_DISPLAY_SECONDS).timeout
 	# VictorySequence only hides/shows factory_hud as a whole (a CanvasLayer)
 	# around its own cinematic — it has no idea this dialog exists, so
@@ -203,3 +215,19 @@ func _run_game_complete_sequence() -> void:
 
 	if victory_sequence != null:
 		await victory_sequence.play()
+
+
+## Ducks tier_music_controller down to _ENDING_DUCK_VOLUME, plays
+## _ENDING_SOUND once that fade completes, then swells the music back up
+## to full once the sound itself finishes — see class doc and the
+## _ENDING_DUCK_* consts. unduck() is deliberately not awaited: the swell
+## is meant to keep going underneath (bleeding into) the start of
+## victory_sequence's credits, not block anything further.
+func _play_ending_sound() -> void:
+	if tier_music_controller == null:
+		Sfx.spawn(self, _ENDING_SOUND)
+		return
+	await tier_music_controller.duck(_ENDING_DUCK_VOLUME, _ENDING_DUCK_SECONDS)
+	var ending_player: AudioStreamPlayer = Sfx.spawn(self, _ENDING_SOUND)
+	await ending_player.finished
+	tier_music_controller.unduck(_ENDING_DUCK_SECONDS)

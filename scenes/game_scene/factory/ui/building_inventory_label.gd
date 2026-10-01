@@ -58,6 +58,12 @@ func _ready() -> void:
 	position = Vector3(0, 0.05, 0)
 	building.input_inventory.changed.connect(_refresh)
 	building.output_inventory.changed.connect(_refresh)
+	# A station going stranded changes no inventory — it is a timer
+	# elapsing on inventory that has stopped moving — so it needs its own
+	# repaint trigger. See ProcessingBuilding.is_output_stranded().
+	var processing: ProcessingBuilding = building as ProcessingBuilding
+	if processing != null:
+		processing.output_status_changed.connect(_refresh)
 	_refresh()
 
 
@@ -96,7 +102,16 @@ func _build_lines() -> Array[Dictionary]:
 		# the label would just be blank with no hint anything's wrong.
 		# Reported as confusing: nothing seemed to indicate why a station
 		# wasn't doing anything.
-		lines.append({"text": "⚠ No recipe selected", "color": _MISSING_COLOR})
+		# Deliberately terse. These labels are world-space text floating
+		# over a 2m grid, so their width is what makes neighbours collide
+		# — and "no recipe yet" is precisely the state several ADJACENT
+		# stations are in at once, right after the player places a row of
+		# them. Rendering a row of three showed the long form colliding
+		# into unreadable mush ("No recipe selectedNo recipe selectedNo
+		# recipe selected"); every other line this label emits is short
+		# ("✓ milk", "cream x2"), so this one string was doing most of
+		# the damage. See decisions.md.
+		lines.append({"text": "⚠ No recipe", "color": _MISSING_COLOR})
 		return lines
 	if not (building is ShippingBin):
 		for item: StringName in building.current_inputs():
@@ -109,6 +124,23 @@ func _build_lines() -> Array[Dictionary]:
 		var amount: int = building.output_inventory.count(item)
 		if amount > 0:
 			lines.append({"text": "%s x%d" % [item, amount], "color": _OUTPUT_COLOR})
+	# A station whose finished batch isn't moving stops dead, and used to
+	# do so with no visible reason at all — the output line above just sat
+	# there at x1 while the player looked at an idle station wondering
+	# what was wrong. The two texts are different diagnoses: "nothing
+	# wants it" means no building takes the item and no bin sells it, so
+	# it will never move; "waiting on pickup" means a delivery job exists
+	# but no cat has got round to it, which points at delivery capacity
+	# rather than at the recipe. Kept as terse as every other line here
+	# for the same reason "⚠ No recipe" is (these are world-space labels
+	# over a 2m grid; long strings collide into mush when neighbouring
+	# stations show them at once).
+	var processing: ProcessingBuilding = building as ProcessingBuilding
+	if processing != null:
+		if processing.is_output_stranded():
+			lines.append({"text": "⚠ no location found", "color": _MISSING_COLOR})
+		elif processing.is_output_stalled():
+			lines.append({"text": "⚠ waiting on pickup", "color": _MISSING_COLOR})
 	return lines
 
 

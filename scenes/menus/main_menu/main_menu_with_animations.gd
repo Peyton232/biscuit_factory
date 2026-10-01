@@ -24,12 +24,18 @@ const _CURSOR_HOTSPOT := Vector2(1, 0)
 ## Opened by both New Game and Load Game (see SaveSlotMenu) — one
 ## shared 3-slot picker rather than two separate scenes.
 @export var save_slot_menu_packed_scene: PackedScene
+## The achievement list, reachable without starting a game. Wraps the
+## same `achievements_page.tscn` the pause menu's own window does — the
+## page reads only the account-wide `Achievements` autoload, so it needs
+## no running factory to show anything. See AchievementsPage.
+@export var achievements_packed_scene: PackedScene
 
 var animation_state_machine : AnimationNodeStateMachinePlayback
 
 @onready var continue_game_button = %ContinueGameButton
 @onready var level_select_button = %LevelSelectButton
 @onready var new_game_confirmation = %NewGameConfirmation
+@onready var achievements_button = %AchievementsButton
 
 ## Stops the title screen music here rather than in each button handler
 ## below — every path into a running game (New Game, Load Game, Continue,
@@ -128,7 +134,12 @@ func _ready() -> void:
 	Input.set_custom_mouse_cursor(_CURSOR, Input.CURSOR_ARROW, _CURSOR_HOTSPOT)
 	_show_level_select_if_set()
 	_show_continue_if_set()
+	achievements_button.pressed.connect(_on_achievements_button_pressed)
 	animation_state_machine = $MenuAnimationTree.get("parameters/playback")
+
+func _on_achievements_button_pressed() -> void:
+	_open_sub_menu(achievements_packed_scene)
+
 
 func _on_continue_game_button_pressed() -> void:
 	GameState.continue_game()

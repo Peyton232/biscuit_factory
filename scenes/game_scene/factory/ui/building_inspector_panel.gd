@@ -51,6 +51,8 @@ var recipe_shop: RecipeShop = null
 var tier_manager: TierManager = null
 
 @onready var _title_label: Label = %TitleLabel
+@onready var _scroll: ScrollContainer = %Scroll
+@onready var _content: VBoxContainer = %Content
 @onready var _info_lines: VBoxContainer = %InfoLines
 @onready var _recipe_buttons: VBoxContainer = %RecipeButtons
 
@@ -60,8 +62,18 @@ var tier_manager: TierManager = null
 var _recipe_button_map: Dictionary[Recipe, Button] = {}
 
 
+## Vertical space kept clear below the panel so a long list stops short
+## of the bottom toolbar (Build / Adopt Cat / Expand Factory) instead of
+## running underneath it or off the bottom of the window.
+const _BOTTOM_RESERVED_PX: float = 112.0
+## Floor on the scroll viewport, so an unusually short window still shows
+## a usable couple of rows rather than collapsing to a sliver.
+const _MIN_SCROLL_PX: float = 120.0
+
+
 func _ready() -> void:
 	hide()
+	get_viewport().size_changed.connect(_fit_to_screen)
 
 
 ## Populates the panel for the given building and shows it. Called by
@@ -134,9 +146,64 @@ func show_for_building(building: Building) -> void:
 			check.add_theme_color_override("font_color", UiButtonStyle.TEXT_COLOR)
 			check.add_theme_color_override("font_hover_color", UiButtonStyle.TEXT_COLOR)
 			check.add_theme_color_override("font_pressed_color", UiButtonStyle.TEXT_COLOR)
+			# A CheckBox is a toggle, so a TICKED one that is hovered uses
+			# font_hover_pressed_color, and a just-clicked one uses
+			# font_focus_color — neither of which the three above cover.
+			# Both defaulted to (near-)white, so hovering an accepted item
+			# made its label vanish into the light panel. See
+			# UiButtonStyle.apply() for the same fix on pill buttons.
+			check.add_theme_color_override("font_hover_pressed_color", UiButtonStyle.TEXT_COLOR)
+			check.add_theme_color_override("font_focus_color", UiButtonStyle.TEXT_COLOR)
 			_info_lines.add_child(check)
 
 	show()
+	_fit_to_screen()
+
+
+## Sizes the scroll viewport to the content, capped at whatever vertical
+## space is actually left on screen below the panel.
+##
+## **Without this the panel simply grew off the bottom of the window.**
+## A PanelContainer takes the larger of its authored size and its
+## content's minimum size, and by Tier 5 this panel's content is long:
+## a Shipping Bin lists a checkbox per sellable item and an Oven lists a
+## button per recipe — measured at **572 px** for 18 rows against roughly
+## 470 px of usable screen. Everything past the cut was unreachable,
+## which is what made French Toast impossible to select and so blocked
+## finishing the game (reported: "some textboxes go off screen in tier 5
+## ... cant see french toast so cant complete the game").
+##
+## The title stays outside the ScrollContainer so the player can always
+## see which building they are looking at while scrolling its options.
+##
+## `custom_minimum_size.y` is the lever rather than `size`: a
+## ScrollContainer reports a vertical minimum of 0 (it is happy to clip),
+## so it contributes nothing to the panel's own minimum height until it
+## is given one, and anything written to `size` is overwritten by the
+## parent container on the next layout pass.
+func _fit_to_screen() -> void:
+	if not visible:
+		return
+	var available: float = get_viewport_rect().size.y - position.y \
+			- _BOTTOM_RESERVED_PX - _chrome_height()
+	# The floor caps how small the window may squeeze the list, not how
+	# small the list itself may be — a two-line panel still renders two
+	# lines tall rather than padding itself out to the minimum.
+	var cap: float = maxf(_MIN_SCROLL_PX, available)
+	_scroll.custom_minimum_size.y = minf(_content.get_combined_minimum_size().y, cap)
+
+
+## Everything in the panel that is not the scrolling area: the margins
+## around the content, the title, and the gap under it. Derived from the
+## live theme constants rather than hard-coded, so restyling the panel
+## cannot silently desync this from the real layout.
+func _chrome_height() -> float:
+	var margin: MarginContainer = _scroll.get_parent().get_parent()
+	var layout: VBoxContainer = _scroll.get_parent()
+	return margin.get_theme_constant("margin_top") \
+			+ margin.get_theme_constant("margin_bottom") \
+			+ _title_label.get_combined_minimum_size().y \
+			+ layout.get_theme_constant("separation")
 
 
 ## The toggle button for a given recipe (only populated for whichever

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/achievements/achievement_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = &"crazy_cat_lady"
+display_name = "Crazy Cat Lady Bakery"
+description = "Run a bakery with at least 30 cats and three cats for every station."
+category = 3
+icon = null
+hidden = false
+sort_order = 4
+target = 30
+item = &""
+progress_format = 0
+steam_api_name_override = ""

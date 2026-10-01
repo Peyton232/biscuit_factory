@@ -28,6 +28,7 @@ signal unlock_pressed(recipe: Recipe)
 const _CARD_TEXT_COLOR: Color = Color(0.18, 0.13, 0.09, 1)
 
 @onready var _name_label: Label = %NameLabel
+@onready var _station_icon: TextureRect = %StationIcon
 @onready var _station_label: Label = %StationLabel
 @onready var _inputs_row: HBoxContainer = %InputsRow
 @onready var _output_row: HBoxContainer = %OutputRow
@@ -42,17 +43,44 @@ var _recipe: Recipe = null
 ## instead of a stale capitalized id.
 var _recipe_shop: RecipeShop = null
 
+## recipe.station_name (e.g. "Oven") -> that station's own
+## BuildingDefinition icon — "make recipe cards more clear, show the
+## building as well" (the station name was already shown as text; this
+## adds the icon players actually recognize from the Build menu). Built
+## once, shared across every card instance, by scanning
+## resources/buildings/*.tres for a display_name match — same
+## discover-from-disk pattern StationItemShowcase already uses, so a
+## future station type picks up an icon with no lookup table to
+## hand-maintain.
+static var _station_icons: Dictionary[String, Texture2D] = {}
+static var _station_icons_built: bool = false
+
 
 func _ready() -> void:
 	_unlock_button.hide()
 	_unlock_button.pressed.connect(func() -> void: unlock_pressed.emit(_recipe))
 	_recipe_shop = get_tree().get_first_node_in_group("recipe_shop") as RecipeShop
+	_build_station_icons()
+
+
+static func _build_station_icons() -> void:
+	if _station_icons_built:
+		return
+	_station_icons_built = true
+	var dir: DirAccess = DirAccess.open("res://resources/buildings/")
+	for file_name: String in dir.get_files():
+		if not file_name.ends_with(".tres"):
+			continue
+		var definition: BuildingDefinition = load("res://resources/buildings/" + file_name) as BuildingDefinition
+		if definition != null and definition.icon != null:
+			_station_icons[definition.display_name] = definition.icon
 
 
 func set_recipe(recipe: Recipe) -> void:
 	_recipe = recipe
 	_name_label.text = recipe.display_name
 	_station_label.text = "Made at: %s" % recipe.station_name
+	_station_icon.texture = _station_icons.get(recipe.station_name)
 	for child: Node in _inputs_row.get_children():
 		child.queue_free()
 	for i: int in recipe.inputs.size():

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/achievements/achievement_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = &"marathon_baker"
+display_name = "Marathon Baker"
+description = "Spend 5 hours in one bakery."
+category = 3
+icon = null
+hidden = false
+sort_order = 1
+target = 18000
+item = &""
+progress_format = 3
+steam_api_name_override = ""

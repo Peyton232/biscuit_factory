@@ -47,6 +47,13 @@ extends Control
 const _CARD_SCENE: PackedScene = preload("res://scenes/game_scene/factory/ui/recipe_card.tscn")
 const _UNLOCK_SOUND: AudioStream = preload("res://assets/sounds/effects/recipe_unlock.wav")
 
+## **Order matters** (✅ fixed — reported as "you see Rich Dough before
+## the recipe that unlocks it"): within each tier, a final (shop_prices)
+## recipe's card must come before any intermediate RecipeShop.INTERNALLY_
+## UNLOCKS only grants for free once that final is bought — otherwise its
+## "locked — buy X" hint points at a card the player hasn't scrolled to
+## yet. See recipe_book.tscn's own `recipes` array for the corrected
+## order; keep this invariant when adding a new recipe.
 @export var recipes: Array[Recipe] = []
 
 @onready var _card_list: VBoxContainer = %CardList

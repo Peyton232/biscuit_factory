@@ -112,6 +112,19 @@ theme_override_styles/focus = ExtResource("3_pillnormal")
 toggle_mode = true
 text = "Assembler"
 
+[node name="PetButton" type="Button" parent="Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+texture_filter = 1
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_styles/normal = ExtResource("3_pillnormal")
+theme_override_styles/hover = ExtResource("4_pillhover")
+theme_override_styles/pressed = ExtResource("5_pillpressed")
+theme_override_styles/focus = ExtResource("3_pillnormal")
+text = "Pet"
 [node name="PickUpButton" type="Button" parent="Margin/Layout"]
 unique_name_in_owner = true
 layout_mode = 2

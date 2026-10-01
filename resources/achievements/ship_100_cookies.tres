@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/achievements/achievement_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = &"ship_100_cookies"
+display_name = "One Smart Cookie"
+description = "Ship 100 Frosted Sugar Cookies."
+category = 2
+icon = null
+hidden = false
+sort_order = 3
+target = 100
+item = &"frosted_sugar_cookie"
+progress_format = 1
+steam_api_name_override = ""

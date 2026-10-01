@@ -8,6 +8,11 @@ extends Node
 ## Emitted whenever the active tool changes (building selected, demolish
 ## toggled, or cancelled). UI reads tool_label()/selected_definition().
 signal tool_changed
+## Emitted after a building is actually removed in demolish mode (not
+## when the tool is merely armed). Added for the tutorial's demolish
+## step, which has to wait for the deed rather than the intent — see
+## TutorialManager.
+signal building_demolished
 
 ## Hotbar slots, in order — selected with the select_building_N actions
 ## (keys 1-7, one per array entry present) or by clicking the build bar.
@@ -146,10 +151,11 @@ func _activate() -> void:
 			FloatingText.spawn(buildings_root, occupant.global_position + Vector3.UP * 2.1,
 					"+$%d" % refund, Color(1.0, 0.84, 0.35))
 			occupant.queue_free()
+			building_demolished.emit()
 		return
 	if _selected == null:
 		return
-	if factory_bounds != null and not factory_bounds.is_region_within_bounds(cell, _selected.size):
+	if factory_bounds != null and not factory_bounds.is_region_placeable(cell, _selected.size):
 		return
 	if not grid_manager.is_region_available(cell, _selected.size):
 		return
@@ -197,7 +203,7 @@ func _is_valid_target(cell: Vector2i) -> bool:
 		# framing, which reads as a warning over a perfectly selectable
 		# building — reported as confusing/hard-to-click by players.
 		return true
-	if factory_bounds != null and not factory_bounds.is_region_within_bounds(cell, _selected.size):
+	if factory_bounds != null and not factory_bounds.is_region_placeable(cell, _selected.size):
 		return false
 	return grid_manager.is_region_available(cell, _selected.size) \
 			and economy.can_afford(_selected.cost)

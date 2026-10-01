@@ -86,7 +86,10 @@ static func format_playtime(seconds: float) -> String:
 	var hours: int = total_minutes / 60
 	var minutes: int = total_minutes % 60
 	if hours > 0:
-		return "%dh %dm" % [hours, minutes]
+		# "5h", not "5h 0m" — an exact hour reads badly with the trailing
+		# zero, and this shows up wherever a round number does: the
+		# achievement list's "5h" target, a completion time, a save slot.
+		return "%dh" % hours if minutes == 0 else "%dh %dm" % [hours, minutes]
 	return "%dm" % minutes
 
 

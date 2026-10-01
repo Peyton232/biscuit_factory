@@ -7,6 +7,9 @@ extends PanelContainer
 signal name_changed(new_name: String)
 signal role_selected(role: Cat.Role)
 signal pick_up_pressed
+## Petting is repeatable, so unlike the role/name signals this one
+## deliberately does NOT dismiss the panel — see FactoryHud.
+signal pet_pressed
 
 @onready var _name_edit: LineEdit = %NameEdit
 @onready var _role_delivery_button: Button = %RoleDeliveryButton
@@ -15,6 +18,7 @@ signal pick_up_pressed
 @onready var _role_cutter_button: Button = %RoleCutterButton
 @onready var _role_assembler_button: Button = %RoleAssemblerButton
 @onready var _pick_up_button: Button = %PickUpButton
+@onready var _pet_button: Button = %PetButton
 
 ## Role -> its toggle button, built in _ready() once every @onready button
 ## above exists. Used by both show_for_cat() and the tutorial system
@@ -35,6 +39,7 @@ func _ready() -> void:
 	for role: Cat.Role in _role_buttons:
 		_role_buttons[role].pressed.connect(role_selected.emit.bind(role))
 	_pick_up_button.pressed.connect(func() -> void: pick_up_pressed.emit())
+	_pet_button.pressed.connect(func() -> void: pet_pressed.emit())
 
 
 ## Populates the panel for the given cat and shows it. Called by

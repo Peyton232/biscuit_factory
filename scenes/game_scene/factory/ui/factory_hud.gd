@@ -107,6 +107,11 @@ const _CURSOR_PINCH_HOTSPOT := Vector2(16, 6)
 const _PAUSE_ICON: Texture2D = preload("res://assets/UI/Pause.png")
 const _SETTINGS_ICON: Texture2D = preload("res://assets/UI/Settings.png")
 
+## How long the insufficient-funds warning sits at full opacity before
+## UiFade takes it away — a fade alone starts vanishing immediately,
+## which is too quick to read two words and look back at your money.
+const _WARNING_HOLD_SECONDS: float = 1.2
+
 const _TIER_COMPLETE_SOUND: AudioStream = preload("res://assets/sounds/effects/tier_complete.wav")
 const _EXPANSION_SOUND: AudioStream = preload("res://assets/sounds/effects/factory_expansion.wav")
 
@@ -117,6 +122,13 @@ const _EXPANSION_SOUND: AudioStream = preload("res://assets/sounds/effects/facto
 ## two strings risking drift. Section reuses AppSettings.GAME_SECTION (the
 ## template's own convention for this kind of setting) rather than
 ## inventing a project-specific one.
+## Clear space to leave between the centred tier banner and the cards on
+## either side of it — see _fit_tier_banner().
+const _TIER_BANNER_GAP_PX: float = 12.0
+## Floor on the banner's width, so a very narrow window wraps the goal
+## line hard rather than collapsing the banner to nothing.
+const _TIER_BANNER_MIN_WIDTH_PX: float = 240.0
+
 const EXPANDED_INFO_HUD_SECTION: StringName = AppSettings.GAME_SECTION
 const EXPANDED_INFO_HUD_KEY: StringName = &"ExpandedInfoHud"
 
@@ -124,11 +136,18 @@ const EXPANDED_INFO_HUD_KEY: StringName = &"ExpandedInfoHud"
 ## remaining dynamic-text buttons (Adopt Cat/Adopt Multiple/Expand
 ## Factory). See _make_pill_button().
 
+## Last text/width _fit_tier_banner() measured for, so it re-measures on
+## change instead of on every frame.
+var _fitted_tier_text: String = ""
+var _fitted_viewport_width: float = -1.0
+
 @onready var _money_label: Label = %MoneyLabel
 @onready var _tool_label: Label = %ToolLabel
 @onready var _fps_label: Label = %FpsLabel
 @onready var _jobs_label: Label = %JobsLabel
 @onready var _tier_label: Label = %TierLabel
+@onready var _tier_panel: PanelContainer = %TopCenter
+@onready var _top_left: PanelContainer = %TopLeft
 @onready var _tier_complete_button: Button = %TierCompleteButton
 @onready var _bottom_bar: HBoxContainer = %BottomBar
 @onready var _build_flyout: PanelContainer = %BuildFlyout
@@ -142,6 +161,7 @@ const EXPANDED_INFO_HUD_KEY: StringName = &"ExpandedInfoHud"
 @onready var _cat_naming_dialog: CatNamingDialog = %CatNamingDialog
 @onready var _cat_batch_dialog: CatBatchAdoptDialog = %CatBatchAdoptDialog
 @onready var _game_complete_dialog: GameCompleteDialog = %GameCompleteDialog
+@onready var _insufficient_funds_label: Label = %InsufficientFundsLabel
 
 var _selected_cat: Cat = null
 var _selected_building: Building = null
@@ -181,6 +201,7 @@ func _ready() -> void:
 	_cat_panel.name_changed.connect(_on_cat_name_changed)
 	_cat_panel.role_selected.connect(_on_cat_role_selected)
 	_cat_panel.pick_up_pressed.connect(_on_cat_pick_up_pressed)
+	_cat_panel.pet_pressed.connect(_on_cat_pet_pressed)
 	_building_panel.recipe_selected.connect(_on_building_recipe_selected)
 	_building_panel.bin_item_toggled.connect(_on_bin_item_toggled)
 	_building_panel.bin_all_toggled.connect(_on_bin_all_toggled)
@@ -191,7 +212,7 @@ func _ready() -> void:
 		cat_placer.placing_changed.connect(_on_cat_placing_changed)
 	if building_mover != null:
 		building_mover.moving_changed.connect(_on_building_moving_changed)
-	_build_back_button.pressed.connect(_build_flyout.hide)
+	_build_back_button.pressed.connect(func() -> void: UiFade.out(_build_flyout))
 	_tier_complete_button.pressed.connect(_on_tier_complete_pressed)
 	if tier_manager != null:
 		tier_manager.tier_advanced.connect(_on_tier_advanced)
@@ -235,6 +256,66 @@ func _apply_expanded_info_hud(enabled: bool) -> void:
 	_jobs_label.visible = enabled
 
 
+## Keeps the tier/goal banner from growing out from under the money card.
+##
+## `TopCenter` is a content-hugging PanelContainer centred with
+## `grow_horizontal = BOTH`, so it widens symmetrically to fit whatever
+## `TierLabel` holds. That is fine for "Tier 0", but a Tier 5 goal line
+## lists five products with their counts and measures **766 px** at the
+## default font — wider than the free gap between the money card and the
+## pause buttons, so the banner grew straight underneath both. Reported
+## as "tier 5 goals conflicts with money and tool box".
+##
+## Rather than pin the banner to a fixed width (which would leave "Tier
+## 0" rattling around in a wide empty box), the label is switched between
+## two modes: hug the text while it fits, wrap inside the available gap
+## once it doesn't. `custom_minimum_size.x` is the lever, because an
+## autowrapping Label reports a minimum width of roughly one word
+## (measured: 33 px), so it is the only thing keeping the panel open.
+##
+## Recomputed only when the text or the window width actually changes —
+## `_update_tier_readout()` runs every frame and re-measuring a string
+## against the font 60 times a second for an unchanged answer is waste.
+func _fit_tier_banner() -> void:
+	var viewport_width: float = get_viewport().get_visible_rect().size.x
+	if _tier_label.text == _fitted_tier_text and is_equal_approx(viewport_width, _fitted_viewport_width):
+		return
+	_fitted_tier_text = _tier_label.text
+	_fitted_viewport_width = viewport_width
+
+	# The banner is centred, so whichever side has less room governs both.
+	var left_clearance: float = _top_left.position.x + _top_left.size.x
+	var right_clearance: float = viewport_width - _top_right.position.x
+	var clearance: float = maxf(left_clearance, right_clearance) + _TIER_BANNER_GAP_PX
+	var available: float = maxf(_TIER_BANNER_MIN_WIDTH_PX, viewport_width - clearance * 2.0)
+
+	var font: Font = _tier_label.get_theme_font("font")
+	var font_size: int = _tier_label.get_theme_font_size("font_size")
+	var natural: float = font.get_string_size(_tier_label.text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var chrome: float = _tier_banner_chrome_width()
+	if natural + chrome <= available:
+		_tier_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		_tier_label.custom_minimum_size.x = 0.0
+	else:
+		_tier_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_tier_label.custom_minimum_size.x = available - chrome
+
+
+## Everything eating horizontal space inside the banner before the label
+## gets any: the MarginContainer's own constants **and** the panel
+## StyleBox's content margins. Measured rather than assumed — the card
+## art's margins alone are 48 px here, and leaving them out of the sum
+## is what left the banner still overlapping the money card by 12 px on
+## the first attempt at this fix.
+func _tier_banner_chrome_width() -> float:
+	var margin: MarginContainer = _tier_panel.get_node("Margin")
+	var style: StyleBox = _tier_panel.get_theme_stylebox("panel")
+	return margin.get_theme_constant("margin_left") \
+			+ margin.get_theme_constant("margin_right") \
+			+ style.get_margin(SIDE_LEFT) + style.get_margin(SIDE_RIGHT)
+
+
 func _update_tier_readout() -> void:
 	if tier_manager == null:
 		_tier_label.hide()
@@ -249,6 +330,7 @@ func _update_tier_readout() -> void:
 			var item_name: String = recipe_shop.display_name_for_item(item) if recipe_shop != null else String(item).capitalize()
 			parts.append("%s %d/%d" % [item_name, tier_manager.goal_progress(item), goal[item]])
 		_tier_label.text = "%s — %s" % [tier_manager.tier_name(), ", ".join(parts)]
+	_fit_tier_banner()
 	# Confetti fires the moment the button *appears* (the player just
 	# completed the tier's goal), not when they click it — "tier complete
 	# isn't obvious enough" playtest feedback, same motivation the button
@@ -257,6 +339,15 @@ func _update_tier_readout() -> void:
 	var can_advance: bool = tier_manager.can_advance()
 	if _tier_readout_primed and can_advance and not _tier_complete_button.visible:
 		TierCompleteConfetti.spawn(self)
+		# The sting belongs HERE, with the confetti, not on the button
+		# click below (✅ fixed — "I completed tier 0 but did not hear the
+		# tier complete noise"). The confetti was already moved to this
+		# moment for exactly the reason in the comment above; the sound
+		# was left behind on the click, so a player who completed a tier
+		# and hadn't yet spotted the button — the case that comment is
+		# about — got a silent celebration. Clicking the button still
+		# makes the template's ordinary UI click sound.
+		Sfx.spawn(self, _TIER_COMPLETE_SOUND)
 	_tier_complete_button.visible = can_advance
 	_tier_readout_primed = true
 
@@ -264,7 +355,6 @@ func _update_tier_readout() -> void:
 func _on_tier_complete_pressed() -> void:
 	if tier_manager != null and tier_manager.can_advance():
 		tier_manager.advance_tier()
-		Sfx.spawn(self, _TIER_COMPLETE_SOUND)
 
 
 func _on_tier_advanced(_new_tier: int) -> void:
@@ -440,9 +530,13 @@ func _scaled_build_icon(texture: Texture2D) -> Texture2D:
 ## Same root cause and same fix shape as RecipeBook's analogous bug —
 ## see decisions.md.
 func _on_build_button_pressed() -> void:
-	_build_flyout.visible = not _build_flyout.visible
-	if _build_flyout.visible:
-		_rebuild_build_grid()
+	# A fading flyout counts as closed, so clicking Build again mid-fade
+	# reopens it rather than reading as "it's still visible, close it".
+	if _build_flyout.visible and not UiFade.is_fading(_build_flyout):
+		UiFade.out(_build_flyout)
+		return
+	UiFade.show_now(_build_flyout)
+	_rebuild_build_grid()
 
 
 func _on_build_option_pressed(definition: BuildingDefinition) -> void:
@@ -460,7 +554,7 @@ func _on_build_option_pressed(definition: BuildingDefinition) -> void:
 ## closes itself via its own built-in Close/"Back" button
 ## (WindowContainer.close(), unrelated to this class).
 func _on_recipes_button_pressed() -> void:
-	_build_flyout.hide()
+	UiFade.out(_build_flyout)
 	_recipe_book_window.show()
 
 
@@ -482,7 +576,7 @@ func _on_tool_changed() -> void:
 	if building_mover != null and building_mover.is_moving():
 		building_mover.cancel_move()
 	_refresh_tool_label()
-	_build_flyout.hide()
+	UiFade.out(_build_flyout)
 
 
 func _on_cat_placing_changed() -> void:
@@ -524,13 +618,37 @@ func _update_cursor() -> void:
 	Input.warp_mouse(get_viewport().get_mouse_position())
 
 
+## Appends the cancel hint whenever a tool is actually held (✅ — "not
+## sure how to make it clear that the player can right click to unselect
+## whatever building they are currently placing"). Shown only while
+## something is selected, so it reads as an instruction about the thing
+## in hand rather than permanent HUD noise; and shown on the Tool line
+## itself, which is already the one place the HUD says what you're
+## holding, rather than as a new floating element to collide with
+## something.
 func _refresh_tool_label() -> void:
+	var label: String = ""
 	if cat_placer != null and cat_placer.is_placing():
-		_tool_label.text = "Tool: %s" % cat_placer.tool_label()
+		label = cat_placer.tool_label()
 	elif building_mover != null and building_mover.is_moving():
-		_tool_label.text = "Tool: %s" % building_mover.tool_label()
+		label = building_mover.tool_label()
 	else:
-		_tool_label.text = "Tool: %s" % placer.tool_label()
+		label = placer.tool_label()
+	_tool_label.text = "Tool: %s" % label
+	if _tool_is_active():
+		_tool_label.text += "  (right-click to cancel)"
+
+
+## Whether the player is currently holding something a right-click would
+## put down — a building to place, a cat to position, or a building being
+## moved. Mirrors the three modes _on_tool_changed() treats as mutually
+## exclusive.
+func _tool_is_active() -> bool:
+	if cat_placer != null and cat_placer.is_placing():
+		return true
+	if building_mover != null and building_mover.is_moving():
+		return true
+	return placer.selected_definition() != null or placer.is_demolish_mode()
 
 
 func _on_pause_pressed() -> void:
@@ -550,7 +668,17 @@ func _on_settings_pressed() -> void:
 func _on_buy_cat_pressed() -> void:
 	if cat_placer != null and cat_placer.is_placing():
 		return
-	_build_flyout.hide()
+	# Checked HERE rather than at the end of the flow (✅ fixed — "if you
+	# don't have enough for adopt a cat, you still get to the point of
+	# being able to place"). Nothing charged the player until placement
+	# resolved, so an unaffordable adoption used to walk them through
+	# naming a cat, picking its role, and lining up a placement before
+	# silently failing — all the work, no cat, no explanation.
+	UiFade.out(_build_flyout)
+	if not cat_shop.can_afford():
+		_flash_insufficient_funds()
+		return
+	_cat_batch_dialog.hide()
 	_cat_naming_dialog.open(cat_shop.current_cost(), cat_shop.next_suggested_name())
 
 
@@ -567,7 +695,14 @@ func _on_cat_name_confirmed(cat_name: String, role: Cat.Role) -> void:
 func _on_adopt_multiple_pressed() -> void:
 	if cat_placer != null and cat_placer.is_placing():
 		return
-	_build_flyout.hide()
+	UiFade.out(_build_flyout)
+	if not cat_shop.can_afford():
+		_flash_insufficient_funds()
+		return
+	# The two adopt dialogs sit on the same screen rectangle, and nothing
+	# used to close one when the other opened — the overlap audit caught
+	# them stacked (see decisions.md).
+	_cat_naming_dialog.hide()
 	_cat_batch_dialog.open(cat_shop)
 
 
@@ -582,6 +717,16 @@ func _on_cat_batch_confirmed(quantity: int, role: Cat.Role) -> void:
 			break
 
 
+## Brief red warning over the bottom bar, held long enough to read and
+## then faded out. A one-line message beats disabling the Adopt Cat
+## button outright: a dead button tells the player nothing about *why*,
+## and the button's own label already shows the price they're short of.
+func _flash_insufficient_funds() -> void:
+	_insufficient_funds_label.text = "Insufficient funds"
+	UiFade.show_now(_insufficient_funds_label)
+	UiFade.out_after(_insufficient_funds_label, _WARNING_HOLD_SECONDS)
+
+
 func _on_cat_shop_cost_changed(_cost: int) -> void:
 	_update_cat_shop_button()
 
@@ -591,6 +736,12 @@ func _update_cat_shop_button() -> void:
 
 
 func _on_expand_pressed() -> void:
+	# Same up-front check the adopt buttons do: try_expand() fails
+	# silently on an unaffordable expansion (its try_spend() just returns
+	# false), which left the player clicking a button that did nothing.
+	if factory_bounds.can_expand_further() and not economy.can_afford(factory_bounds.current_cost()):
+		_flash_insufficient_funds()
+		return
 	if factory_bounds.try_expand():
 		Sfx.spawn(self, _EXPANSION_SOUND)
 	_update_expand_button()
@@ -608,20 +759,42 @@ func _on_cat_selection_changed(cat: Cat) -> void:
 	_selected_cat = cat
 	if cat != null:
 		_building_panel.hide()
+		UiFade.cancel(_cat_panel)
 		_cat_panel.show_for_cat(cat)
 	else:
 		_cat_panel.hide()
 
 
+## Naming and role-picking are both "I'm done with this cat" actions, so
+## the panel sees itself out rather than sitting there until the player
+## happens to click empty ground or press ESC (✅ — "after they name a cat
+## or select a role it should fade"). The cat stays *selected* (its hover
+## outline still reads), so clicking it again brings the panel straight
+## back; only the panel leaves.
 func _on_cat_name_changed(new_name: String) -> void:
 	if _selected_cat != null:
 		_selected_cat.set_cat_name(new_name)
+		UiFade.out(_cat_panel)
 
 
 func _on_cat_role_selected(role: Cat.Role) -> void:
 	if _selected_cat != null:
 		_selected_cat.set_role(role)
+		# Still refresh first: the panel is visible for the whole fade,
+		# so it has to show the role that was just picked rather than
+		# fading out still displaying the old one.
 		_cat_panel.show_for_cat(_selected_cat)
+		UiFade.out(_cat_panel)
+
+
+## **Deliberately does not fade the panel**, unlike picking a role or
+## entering a name. Those are "I'm done with this cat" actions; petting
+## is something you do repeatedly, and dismissing the panel after one pet
+## would mean re-selecting the cat to do it again. Same reasoning as the
+## Shipping Bin checklist keeping its panel open.
+func _on_cat_pet_pressed() -> void:
+	if _selected_cat != null:
+		_selected_cat.pet()
 
 
 func _on_cat_pick_up_pressed() -> void:
@@ -632,16 +805,24 @@ func _on_building_selection_changed(building: Building) -> void:
 	_selected_building = building
 	if building != null:
 		_cat_panel.hide()
+		UiFade.cancel(_building_panel)
 		_building_panel.show_for_building(building)
 	else:
 		_building_panel.hide()
 
 
+## Picking a recipe finishes the job this panel was opened for, so it
+## fades away like the cat panel does. **Deliberately NOT done for the
+## Shipping Bin checklist** (`_on_bin_item_toggled`/`_on_bin_all_toggled`
+## below): that list is inherently multi-select — a player routing three
+## items away from a bin would have to re-open the panel between every
+## checkbox.
 func _on_building_recipe_selected(recipe: Recipe) -> void:
 	var processing: ProcessingBuilding = _selected_building as ProcessingBuilding
 	if processing != null:
 		processing.assign_recipe(recipe)
 		_building_panel.show_for_building(processing)
+		UiFade.out(_building_panel)
 
 
 func _on_bin_item_toggled(item: StringName, enabled: bool) -> void:
@@ -684,6 +865,14 @@ func cat_inspector_panel() -> CatInspectorPanel:
 
 func building_inspector_panel() -> BuildingInspectorPanel:
 	return _building_panel
+
+
+## The Building the player currently has selected, or null. Unlike the
+## panel getters above (which the tutorial highlights *against*), this is
+## a state query: the Tier 1 chapter's "click one of your Shipping Bins"
+## step completes on it.
+func selected_building() -> Building:
+	return _selected_building
 
 
 func recipes_button() -> TextureButton:

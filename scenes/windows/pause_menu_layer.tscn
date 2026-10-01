@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://bqfig6tjg08vo" path="res://scenes/windows/pause_menu_recipe_book_window.tscn" id="6_recipebook"]
 [ext_resource type="PackedScene" uid="uid://dx2fgms2ht0eu" path="res://scenes/windows/pause_menu_building_book_window.tscn" id="7_buildingbook"]
 [ext_resource type="PackedScene" path="res://scenes/windows/pause_menu_stats_window.tscn" id="8_stats"]
+[ext_resource type="PackedScene" path="res://scenes/windows/pause_menu_achievements_window.tscn" id="13_achievements"]
 [ext_resource type="StyleBoxTexture" path="res://resources/themes/recipe_card_normal.tres" id="9_cardbg"]
 [ext_resource type="StyleBoxTexture" path="res://resources/themes/pill_button_normal.tres" id="10_pillnormal"]
 [ext_resource type="StyleBoxTexture" path="res://resources/themes/pill_button_hover.tres" id="11_pillhover"]
@@ -28,6 +29,7 @@ options_menu_scene = ExtResource("4_mh1be")
 recipe_book_scene = ExtResource("6_recipebook")
 building_book_scene = ExtResource("7_buildingbook")
 stats_scene = ExtResource("8_stats")
+achievements_scene = ExtResource("13_achievements")
 main_menu_scene_path = ""
 restart_confirmation_node_path = NodePath("../RestartConfirmation")
 main_menu_confirmation_node_path = NodePath("../MainMenuConfirmation")

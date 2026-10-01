@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/achievements/achievement_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = &"big_money"
+display_name = "Rolling in Dough"
+description = "Earn $50,000 in total sales."
+category = 3
+icon = null
+hidden = false
+sort_order = 3
+target = 50000
+item = &""
+progress_format = 2
+steam_api_name_override = ""

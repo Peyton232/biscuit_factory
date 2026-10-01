@@ -78,6 +78,29 @@ func begin_move(building: Building) -> void:
 func cancel_move() -> void:
 	if not is_moving():
 		return
+	_end_move()
+
+
+## Clears move state and announces it, **without re-checking
+## is_moving()** — which is exactly why this is separate from
+## cancel_move() rather than folded into it.
+##
+## **A freed Object compares equal to null in GDScript** (verified:
+## `node.free()` then `node != null` is `false`), so the instant
+## `_confirm()` below calls `_building.free()`, `is_moving()` starts
+## reporting false. cancel_move()'s own "not moving, nothing to do"
+## guard then early-returned and `moving_changed` was **never emitted**
+## on the one path that matters — a *successful* move. FactoryHud
+## therefore never ran `_update_cursor()` or `_refresh_tool_label()`, so
+## the pinch cursor stayed pinched and the Tool line kept reading
+## "Moving Oven (click to place)" until something else happened to
+## refresh them. Reported as "I picked up an oven and when I put it down
+## my hand was stuck in pinch mode"; it never reproduced on cancel,
+## because cancelling doesn't free anything. Note `queue_free()` would
+## not have had this problem (the node stays valid to the end of the
+## frame) — but `_confirm()` needs the synchronous `free()` so grid
+## occupancy actually clears before it checks the destination cell.
+func _end_move() -> void:
 	_building = null
 	_definition = null
 	_saved_entry = null
@@ -109,9 +132,9 @@ func _confirm() -> void:
 		# Clicking the building's own current spot: nothing to do, but
 		# still worth ending the move rather than leaving it pending
 		# (matches clicking "confirm" reading as "I'm done here").
-		cancel_move()
+		_end_move()
 		return
-	if factory_bounds != null and not factory_bounds.is_region_within_bounds(new_cell, _definition.size):
+	if factory_bounds != null and not factory_bounds.is_region_placeable(new_cell, _definition.size):
 		return
 	if not grid_manager.is_region_available(new_cell, _definition.size):
 		return
@@ -121,4 +144,7 @@ func _confirm() -> void:
 	building_placer.inject_dependencies(building)
 	buildings_root.add_child(building)
 	building.load_entry(_saved_entry)
-	cancel_move()
+	# _end_move(), not cancel_move(): _building is already freed by now,
+	# so cancel_move()'s is_moving() guard would swallow this. See
+	# _end_move()'s own doc comment.
+	_end_move()

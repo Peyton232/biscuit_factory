@@ -19,12 +19,19 @@ const _BUS: StringName = &"SFX"
 ## already declares an instance method called play(); a static method
 ## sharing that name but a different signature is a real parse error
 ## ("overrides a method from native class"), not just a style choice.
-static func spawn(parent: Node, stream: AudioStream) -> void:
+##
+## Returns the underlying AudioStreamPlayer (still self-freeing on
+## `finished`) so a caller that cares when a specific one-shot ends —
+## e.g. FactoryWorld awaiting the ending beat's sound before swelling
+## the tier music back up — can await its `finished` signal too;
+## every existing call site just ignores the return value.
+static func spawn(parent: Node, stream: AudioStream) -> AudioStreamPlayer:
 	if stream == null:
-		return
+		return null
 	var player := Sfx.new()
 	player.stream = stream
 	player.bus = _BUS
 	parent.add_child(player)
 	player.finished.connect(player.queue_free)
 	player.play()
+	return player

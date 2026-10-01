@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/achievements/achievement_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = &"ship_100_biscuits"
+display_name = "Biscuit Business"
+description = "Ship 100 Biscuits."
+category = 2
+icon = null
+hidden = false
+sort_order = 1
+target = 100
+item = &"biscuit"
+progress_format = 1
+steam_api_name_override = ""

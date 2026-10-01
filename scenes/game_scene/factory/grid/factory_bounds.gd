@@ -31,17 +31,40 @@ extends Node
 ## matching progression.md's "Estimated Money Growth per Tier" reference
 ## curve loosely rather than exactly. Tune here if playtesting shows it's
 ## off.
+##
+## **Placement keeps a 1-cell clearance from the wall
+## (`is_region_placeable()`), separate from `is_region_within_bounds()`
+## itself** (✅ fixed — reported as "stations placed on the top row clip
+## through the wall") — a station placed in the outermost ring sat close
+## enough to the wall that its billboarded sprite's upper portion visually
+## rendered behind the wall geometry at the camera's usual pitch (confirmed
+## with a real rendered capture: the very edge row clips, one cell in is
+## clean). `is_region_within_bounds()` itself is untouched, so pathfinding
+## blocking (which also calls it, for cats) still leaves the whole unlocked
+## rectangle walkable right up to the wall — only building placement gets
+## the margin. `starting_size` is grown by 2 cells (1 per side) to
+## compensate — `expand_step` doesn't need the same treatment, since a
+## fixed 1-cell margin re-applied at any unlocked size still lets a later
+## expansion grow the buildable area by the full `expand_step` either way.
+## Net effect: the player can build on exactly as much area as before this
+## fix at every expansion tier; only the wall itself now sits one cell
+## farther from the nearest buildable cell.
 
 signal expanded
 
 @export var grid_manager: GridManager
 @export var economy: Economy
-## Cells buildable along each axis at the start of a new game.
-@export var starting_size: Vector2i = Vector2i(12, 12)
+## Cells buildable along each axis at the start of a new game. +2 over the
+## nominal 12×12 (✅ 2026-08-25) to offset is_region_placeable()'s new
+## 1-cell wall clearance — see class doc.
+@export var starting_size: Vector2i = Vector2i(14, 14)
 ## Cells added along each axis per successful expansion.
 @export var expand_step: Vector2i = Vector2i(4, 4)
 @export var base_cost: int = 200
 @export var cost_growth: float = 1.6
+
+## See class doc's placement-clearance note.
+const _WALL_CLEARANCE_CELLS: int = 1
 
 var unlocked_size: Vector2i
 var _expansion_count: int = 0
@@ -57,6 +80,16 @@ func is_region_within_bounds(cell: Vector2i, size: Vector2i) -> bool:
 	var far_corner: Vector2i = origin + unlocked_size
 	return cell.x >= origin.x and cell.y >= origin.y \
 			and cell.x + size.x <= far_corner.x and cell.y + size.y <= far_corner.y
+
+
+## Same as is_region_within_bounds(), plus a fixed clearance from the wall
+## — what BuildingPlacer/BuildingMover should actually gate placement on
+## (see class doc). Expressed as "does this region, grown by the margin on
+## every side, still fit the plain unlocked rectangle" rather than
+## duplicating _origin()/far_corner arithmetic against a shrunk rectangle.
+func is_region_placeable(cell: Vector2i, size: Vector2i) -> bool:
+	var margin: Vector2i = Vector2i.ONE * _WALL_CLEARANCE_CELLS
+	return is_region_within_bounds(cell - margin, size + margin * 2)
 
 
 ## World-space corner/size of the currently unlocked rectangle, for

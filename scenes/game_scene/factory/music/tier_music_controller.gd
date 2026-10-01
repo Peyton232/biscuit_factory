@@ -82,6 +82,13 @@ var _player: AudioStreamPlayer
 var _tweens: Array[Tween] = []
 var _started: bool = false
 
+## Separate from `_tweens` above (which move each layer's own sync-stream
+## volume): duck()/unduck() move `_player`'s own volume_db instead, so a
+## caller ducking the whole mix for a beat (see FactoryWorld's ending
+## sequence) never fights `_set_layer_active`'s per-layer fades for the
+## same tween, and always has exactly one duck in flight at a time.
+var _duck_tween: Tween
+
 ## -1 is a sentinel meaning "never synced yet" — see class doc's note on
 ## why the very first sync must be instant, not faded.
 var _synced_tier: int = -1
@@ -162,3 +169,32 @@ func _set_layer_active(index: int, active: bool, instant: bool) -> void:
 
 func _apply_layer_volume(volume_db: float, index: int) -> void:
 	_stream.set_sync_stream_volume(index, volume_db)
+
+
+## Fades the whole mix (every layer at once, via the shared `_player`'s
+## own volume_db) down to `target_linear` of its current level over
+## `duration` seconds, and awaits that fade before returning — see
+## FactoryWorld's ending sequence, which awaits this before playing
+## `ending.wav` so the sting isn't buried under the still-playing tier
+## music. `target_linear` is relative to the music's own volume, not the
+## Master/Music bus sliders those already sit under.
+func duck(target_linear: float, duration: float) -> void:
+	await _tween_player_volume(linear_to_db(target_linear), duration)
+
+
+## Fades back up to unducked (0 dB, i.e. whatever the per-layer tier
+## volumes were already tracking) over `duration` seconds. Not awaited by
+## FactoryWorld — the swell is meant to bleed into the start of the
+## credits rather than block anything further.
+func unduck(duration: float) -> void:
+	await _tween_player_volume(0.0, duration)
+
+
+func _tween_player_volume(target_db: float, duration: float) -> void:
+	if _player == null:
+		return
+	if _duck_tween != null and _duck_tween.is_valid():
+		_duck_tween.kill()
+	_duck_tween = create_tween()
+	_duck_tween.tween_property(_player, "volume_db", target_db, duration)
+	await _duck_tween.finished

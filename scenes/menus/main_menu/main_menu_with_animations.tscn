@@ -13,6 +13,7 @@
 [ext_resource type="StyleBox" path="res://resources/themes/pill_button_pressed.tres" id="11_pillpressed"]
 [ext_resource type="Script" path="res://scenes/menus/main_menu/menu_music_player.gd" id="13_menumusic"]
 [ext_resource type="AudioStream" path="res://assets/sounds/music/tier-0.wav" id="14_menumusicstream"]
+[ext_resource type="PackedScene" path="res://scenes/windows/main_menu_achievements_window.tscn" id="15_achwindow"]
 
 [sub_resource type="Animation" id="1"]
 resource_name = "Intro"
@@ -324,6 +325,7 @@ graph_offset = Vector2(-180.277, 49)
 
 [node name="MainMenu" unique_id=455022277 instance=ExtResource("1_sr523")]
 script = ExtResource("2_ixa71")
+achievements_packed_scene = ExtResource("15_achwindow")
 level_select_packed_scene = null
 confirm_new_game = true
 save_slot_menu_packed_scene = ExtResource("6_slotmenu")
@@ -385,7 +387,7 @@ lock = true
 
 [node name="NewGameButton" parent="MenuContainer/MenuButtonsMargin/MenuButtonsContainer/MenuButtonsBoxContainer" index="0" unique_id=2044537792]
 texture_filter = 1
-custom_minimum_size = Vector2(120, 40)
+custom_minimum_size = Vector2(160, 40)
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
 theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
@@ -400,7 +402,7 @@ theme_override_styles/focus = ExtResource("9_pillnormal")
 unique_name_in_owner = true
 visible = false
 texture_filter = 1
-custom_minimum_size = Vector2(120, 40)
+custom_minimum_size = Vector2(160, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
@@ -417,7 +419,7 @@ text = "Continue"
 unique_name_in_owner = true
 visible = false
 texture_filter = 1
-custom_minimum_size = Vector2(120, 40)
+custom_minimum_size = Vector2(160, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
@@ -433,7 +435,7 @@ text = "Level Select"
 [node name="LoadGameButton" type="Button" parent="MenuContainer/MenuButtonsMargin/MenuButtonsContainer/MenuButtonsBoxContainer" index="3" unique_id=1608098345]
 unique_name_in_owner = true
 texture_filter = 1
-custom_minimum_size = Vector2(120, 40)
+custom_minimum_size = Vector2(160, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
@@ -448,7 +450,7 @@ text = "Load Game"
 
 [node name="OptionsButton" parent="MenuContainer/MenuButtonsMargin/MenuButtonsContainer/MenuButtonsBoxContainer" index="4" unique_id=1486236076]
 texture_filter = 1
-custom_minimum_size = Vector2(120, 40)
+custom_minimum_size = Vector2(160, 40)
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
 theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
@@ -461,7 +463,7 @@ theme_override_styles/focus = ExtResource("9_pillnormal")
 
 [node name="CreditsButton" parent="MenuContainer/MenuButtonsMargin/MenuButtonsContainer/MenuButtonsBoxContainer" index="5" unique_id=301223169]
 texture_filter = 1
-custom_minimum_size = Vector2(120, 40)
+custom_minimum_size = Vector2(160, 40)
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
 theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
@@ -472,9 +474,25 @@ theme_override_styles/pressed = ExtResource("11_pillpressed")
 theme_override_styles/hover = ExtResource("10_pillhover")
 theme_override_styles/focus = ExtResource("9_pillnormal")
 
-[node name="ExitButton" parent="MenuContainer/MenuButtonsMargin/MenuButtonsContainer/MenuButtonsBoxContainer" index="6" unique_id=1750454379]
+[node name="AchievementsButton" type="Button" parent="MenuContainer/MenuButtonsMargin/MenuButtonsContainer/MenuButtonsBoxContainer" index="6" unique_id=1608098399]
+unique_name_in_owner = true
 texture_filter = 1
-custom_minimum_size = Vector2(120, 40)
+custom_minimum_size = Vector2(160, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.13, 0.09, 1)
+theme_override_styles/normal = ExtResource("9_pillnormal")
+theme_override_styles/pressed = ExtResource("11_pillpressed")
+theme_override_styles/hover = ExtResource("10_pillhover")
+theme_override_styles/focus = ExtResource("9_pillnormal")
+text = "Achievements"
+
+[node name="ExitButton" parent="MenuContainer/MenuButtonsMargin/MenuButtonsContainer/MenuButtonsBoxContainer" index="7" unique_id=1750454379]
+texture_filter = 1
+custom_minimum_size = Vector2(160, 40)
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0.18, 0.13, 0.09, 1)
 theme_override_colors/font_focus_color = Color(0.18, 0.13, 0.09, 1)

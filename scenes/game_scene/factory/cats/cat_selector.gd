@@ -2,28 +2,33 @@ class_name CatSelector
 extends Node
 ## Lets the player click a cat to select it (opening the cat inspector
 ## panel), pick it up and carry it to a new spot, or click empty ground
-## to deselect. Reuses GridCursor's ground-projection math for hit
-## testing (no physics colliders), consistent with the rest of the
-## factory's mouse picking.
+## to deselect.
 ##
 ## Only claims a click when it actually did something (selected a cat,
 ## picked one up, or dropped one) — an empty-ground click is left alone
 ## so it still falls through to BuildingPlacer/CameraRig exactly as if
 ## this node didn't exist, preserving click-drag camera panning.
 ##
-## **Stationed cats use a much smaller pick radius than everyone else**
-## (stationed_pick_radius, not pick_radius) — a STATIONED cat parks at
-## station_offset from its building (~1.13m from the building's own
-## center, see Cat's class doc), well inside the enlarged 1.6m
-## pick_radius meant for small moving targets. Since this node sits
-## later in factory_world.tscn than BuildingSelector and so gets first
-## refusal on every click (see the tree-order note in decisions.md), that
-## let a click clearly aimed at the building underneath a stationed cat
-## get eaten here instead — reported as "impossible to select or change
-## a recipe for a station" whenever it had a cat parked on it. A
-## stationed cat isn't a hard-to-click moving target anymore, so it
-## doesn't need the enlarged radius; a small one still lets the player
-## click the cat itself deliberately.
+## **Cats are picked in SCREEN space, against the sprite the player can
+## actually see (SpritePicker), not by a radius around their feet on the
+## ground plane** (✅ rewritten 2026-09-17 — "selecting a cat only works
+## when clicking their body, but most players will try to click their
+## heads"). The old ground-radius test inherited the rest of the
+## factory's `GridCursor.world_point` picking, which is right for things
+## whose clickable extent is their floor footprint and wrong for a
+## billboard that stands up out of it: the pixel over a cat's head
+## projects to a ground point about a metre BEHIND the cat, so head
+## clicks missed. See SpritePicker's own class doc and decisions.md.
+##
+## **A stationed cat still can't steal clicks aimed at its station**
+## (previously reported as "impossible to select or change a recipe for
+## a station" whenever a cat was parked on it, and previously worked
+## around with a deliberately tiny stationed-only pick radius): a cat
+## standing behind its station is skipped wherever the station's own
+## sprite is opaque in front of it — see _hidden_behind_station(). That
+## is the real rule the radius hack was approximating, so the hack is
+## gone: the cat is clickable exactly where it's visible (its head, at a
+## Mixer) and nowhere it isn't.
 
 ## Emitted when the selected cat changes; null when deselected.
 signal selection_changed(cat: Cat)
@@ -35,15 +40,6 @@ signal held_changed(cat: Cat)
 @export var grid_cursor: GridCursor
 @export var placer: BuildingPlacer
 @export var cats_root: Node3D
-## How close (world units) a click needs to land to a cat to select it.
-## Larger than the cat's own visual footprint on purpose — cats are a
-## small, moving target, and players reported them "hard to click on"
-## at the old 1.0 (which was roughly the sprite's own width).
-@export var pick_radius: float = 1.6
-## Pick radius used for STATIONED cats specifically (see class doc) —
-## small, since a parked cat is a fixed target, not one the player needs
-## help clicking; keeps the building underneath it clickable too.
-@export var stationed_pick_radius: float = 0.5
 ## Height a held cat's origin floats at, so it visibly separates from the
 ## floor. Paired with Cat's own _HELD_VISUAL_Y (the sprite hangs *below*
 ## this point rather than standing on it, reading as held by the scruff
@@ -118,13 +114,16 @@ func _on_click() -> void:
 		return
 	if placer.selected_definition() != null or placer.is_demolish_mode():
 		return
-	if not grid_cursor.has_hover:
-		return
-	var clicked: Cat = _find_cat_near(grid_cursor.world_point)
+	# Deliberately NOT gated on grid_cursor.has_hover the way it used to
+	# be: that asks "is the ground under the mouse inside the factory",
+	# which a click on a cat's head can fail (its ground point is a metre
+	# behind it, possibly past the bounds) even though the cat itself is
+	# plainly under the cursor. Deselecting on empty ground still is.
+	var clicked: Cat = _cat_under_mouse()
 	if clicked != null:
 		_select(clicked)
 		get_viewport().set_input_as_handled()
-	elif _selected != null:
+	elif _selected != null and grid_cursor.has_hover:
 		_deselect()
 
 
@@ -186,22 +185,52 @@ func _drop_held_cat() -> void:
 func hovered_cat() -> Cat:
 	if _held != null or placer.selected_definition() != null or placer.is_demolish_mode():
 		return null
-	if not grid_cursor.has_hover:
+	return _cat_under_mouse()
+
+
+## The cat drawn under the mouse right now, or null. Ties (overlapping
+## sprites) go to whichever cat is nearest the camera — the one actually
+## drawn on top, so clicking picks what the player sees.
+func _cat_under_mouse() -> Cat:
+	var camera: Camera3D = get_viewport().get_camera_3d()
+	if camera == null:
 		return null
-	return _find_cat_near(grid_cursor.world_point)
-
-
-func _find_cat_near(world_point: Vector3) -> Cat:
+	var screen_point: Vector2 = get_viewport().get_mouse_position()
 	var nearest: Cat = null
-	var nearest_dist: float = pick_radius
+	var nearest_distance: float = INF
 	for child: Node in cats_root.get_children():
 		var cat: Cat = child as Cat
 		if cat == null:
 			continue
-		var radius: float = stationed_pick_radius if cat.is_stationed() else pick_radius
-		var dist: float = Vector2(cat.position.x, cat.position.z).distance_to(
-				Vector2(world_point.x, world_point.z))
-		if dist < radius and dist < nearest_dist:
+		if not SpritePicker.hits(cat.visual(), camera, screen_point):
+			continue
+		if _hidden_behind_station(cat, camera, screen_point):
+			continue
+		var distance: float = camera.global_position.distance_squared_to(cat.global_position)
+		if distance < nearest_distance:
 			nearest = cat
-			nearest_dist = dist
+			nearest_distance = distance
 	return nearest
+
+
+## Whether this point falls on part of a stationed cat that its own
+## station is drawn over — the cat's hidden body, not its visible head
+## (see the class doc). Only the cat's own station is considered, not
+## every building in the factory: parking behind a station is the one
+## case the player actually hits, and it's the one a previous fix had to
+## work around with a shrunken pick radius. A cat standing behind some
+## unrelated building elsewhere is still clickable through it, which is
+## the pre-existing behavior and has never been reported as a problem.
+func _hidden_behind_station(cat: Cat, camera: Camera3D, screen_point: Vector2) -> bool:
+	var station: ProcessingBuilding = cat.station()
+	if station == null:
+		return false
+	var station_visual: Sprite3D = station.get_node_or_null("Visual") as Sprite3D
+	if station_visual == null:
+		return false
+	var camera_position: Vector3 = camera.global_position
+	if camera_position.distance_squared_to(station.global_position) \
+			> camera_position.distance_squared_to(cat.global_position):
+		# Cat is in front of its station — nothing to hide behind.
+		return false
+	return SpritePicker.is_opaque_at(station_visual, camera, screen_point)

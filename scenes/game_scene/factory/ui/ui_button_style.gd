@@ -25,6 +25,16 @@ static func apply(button: Button) -> void:
 	button.add_theme_color_override("font_color", TEXT_COLOR)
 	button.add_theme_color_override("font_hover_color", TEXT_COLOR)
 	button.add_theme_color_override("font_pressed_color", TEXT_COLOR)
+	# font_hover_pressed_color is its own separate theme entry, and it is
+	# the one that applies to a TOGGLE button that is both checked and
+	# hovered. Missing it left every checked toggle (a selected recipe, a
+	# ticked Shipping Bin item, the current role) flipping to the theme
+	# default — pure white — the moment the mouse touched it, which on
+	# this project's light panel art is invisible. Reported as "on the
+	# shipping bin when I hover over text it becomes white on a white
+	# background"; the same gap silently affected every toggle styled
+	# here. Verified the default really is (1,1,1,1), see decisions.md.
+	button.add_theme_color_override("font_hover_pressed_color", TEXT_COLOR)
 	button.add_theme_color_override("font_focus_color", TEXT_COLOR)
 	button.add_theme_color_override("font_disabled_color", TEXT_COLOR)
 	button.add_theme_stylebox_override("normal", _PILL_NORMAL)

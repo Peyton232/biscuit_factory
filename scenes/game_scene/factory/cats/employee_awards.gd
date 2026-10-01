@@ -24,6 +24,9 @@ extends RefCounted
 ## deterministic) — not worth a fancier tiebreaker for a cosmetic
 ## end-of-game flourish. This is what makes different playthroughs
 ## surface different cats/awards, per the design brief.
+##
+## **No cat wins twice on the same screen** unless the roster can't
+## supply enough distinct winners — see compute().
 
 const _AWARDS_PER_PLAYTHROUGH: int = 3
 ## A station role needs at least this many batches from its single best
@@ -35,10 +38,50 @@ const _MIN_STATION_BATCHES_FOR_AWARD: int = 1
 const _MIN_ROLES_FOR_JACK_OF_ALL_TRADES: int = 2
 
 
+## Up to _AWARDS_PER_PLAYTHROUGH awards, **no cat winning more than one**
+## unless the bakery simply cannot fill the card any other way.
+##
+## Reported: the awards screen showed "Newby" twice out of three cards.
+## One cat can legitimately top several categories at once — the cat with
+## the most deliveries is often also the fastest, the most travelled and
+## the most versatile — so a plain random draw from the pool repeats a
+## name often, and a screen celebrating the whole roster reads much worse
+## for it.
+##
+## **Two passes rather than a filter**, because "distinct winners" is a
+## preference, not an invariant: a two-cat bakery, or a run where only
+## one cat ever did any work, genuinely has no third distinct winner, and
+## showing one card where three fit looks more broken than a repeat does.
+## So the first pass takes only awards whose winner hasn't been used, and
+## the second fills any remaining slots from what's left over. With three
+## or more working cats the second pass never runs.
+##
+## **Deduplicated on the displayed name, not on cat identity.** Nothing
+## stops a player naming two cats the same thing, and two cards reading
+## "Newby" look like the same bug whether or not they are the same
+## animal — the name is what the screen shows, so the name is what must
+## not repeat. Name-matching also subsumes identity-matching, since one
+## cat always reports one name.
 static func compute(cats: Array[Cat]) -> Array[EmployeeAward]:
 	var pool: Array[EmployeeAward] = _eligible_pool(cats)
 	pool.shuffle()
-	return pool.slice(0, mini(_AWARDS_PER_PLAYTHROUGH, pool.size()))
+
+	var chosen: Array[EmployeeAward] = []
+	var used_names: Dictionary[String, bool] = {}
+	for award: EmployeeAward in pool:
+		if chosen.size() >= _AWARDS_PER_PLAYTHROUGH:
+			return chosen
+		if used_names.has(award.cat_name):
+			continue
+		used_names[award.cat_name] = true
+		chosen.append(award)
+
+	for award: EmployeeAward in pool:
+		if chosen.size() >= _AWARDS_PER_PLAYTHROUGH:
+			break
+		if not chosen.has(award):
+			chosen.append(award)
+	return chosen
 
 
 static func _eligible_pool(cats: Array[Cat]) -> Array[EmployeeAward]:
@@ -81,8 +124,7 @@ static func _employee_of_the_month(cats: Array[Cat]) -> EmployeeAward:
 			best_total = total
 	if best == null or best_total <= 0:
 		return null
-	return EmployeeAward.new("Employee of the Month", best.cat_name, "%d jobs completed" % best_total,
-			best.breed_index, best.fur_color_index)
+	return EmployeeAward.new("Employee of the Month", best, "%d jobs completed" % best_total)
 
 
 static func _fastest_delivery_cat(cats: Array[Cat]) -> EmployeeAward:
@@ -97,8 +139,7 @@ static func _fastest_delivery_cat(cats: Array[Cat]) -> EmployeeAward:
 			best_avg = avg
 	if best == null:
 		return null
-	return EmployeeAward.new("Fastest Delivery Cat", best.cat_name, "%.1fs avg. delivery" % best_avg,
-			best.breed_index, best.fur_color_index)
+	return EmployeeAward.new("Fastest Delivery Cat", best, "%.1fs avg. delivery" % best_avg)
 
 
 static func _master_baker(cats: Array[Cat]) -> EmployeeAward:
@@ -111,8 +152,7 @@ static func _master_baker(cats: Array[Cat]) -> EmployeeAward:
 			best_total = total
 	if best == null or best_total <= 0:
 		return null
-	return EmployeeAward.new("Master Baker", best.cat_name, "%d items produced" % best_total,
-			best.breed_index, best.fur_color_index)
+	return EmployeeAward.new("Master Baker", best, "%d items produced" % best_total)
 
 
 static func _workaholic(cats: Array[Cat]) -> EmployeeAward:
@@ -125,8 +165,7 @@ static func _workaholic(cats: Array[Cat]) -> EmployeeAward:
 	if best == null or best_seconds <= 0.0:
 		return null
 	return EmployeeAward.new(
-			"Workaholic", best.cat_name, "%s spent working" % LifetimeStats.format_playtime(best_seconds),
-			best.breed_index, best.fur_color_index)
+			"Workaholic", best, "%s spent working" % LifetimeStats.format_playtime(best_seconds))
 
 
 static func _professional_napper(cats: Array[Cat]) -> EmployeeAward:
@@ -139,8 +178,7 @@ static func _professional_napper(cats: Array[Cat]) -> EmployeeAward:
 	if best == null or best_seconds <= 0.0:
 		return null
 	return EmployeeAward.new(
-			"Professional Napper", best.cat_name, "%s spent napping" % LifetimeStats.format_playtime(best_seconds),
-			best.breed_index, best.fur_color_index)
+			"Professional Napper", best, "%s spent napping" % LifetimeStats.format_playtime(best_seconds))
 
 
 static func _explorer(cats: Array[Cat]) -> EmployeeAward:
@@ -152,8 +190,7 @@ static func _explorer(cats: Array[Cat]) -> EmployeeAward:
 			best_distance = cat.total_distance_meters
 	if best == null or best_distance <= 0.0:
 		return null
-	return EmployeeAward.new("Explorer", best.cat_name, "%d m walked" % roundi(best_distance),
-			best.breed_index, best.fur_color_index)
+	return EmployeeAward.new("Explorer", best, "%d m walked" % roundi(best_distance))
 
 
 static func _jack_of_all_trades(cats: Array[Cat]) -> EmployeeAward:
@@ -166,8 +203,7 @@ static func _jack_of_all_trades(cats: Array[Cat]) -> EmployeeAward:
 			best_count = count
 	if best == null or best_count < _MIN_ROLES_FOR_JACK_OF_ALL_TRADES:
 		return null
-	return EmployeeAward.new("Jack of All Trades", best.cat_name, "%d roles held" % best_count,
-			best.breed_index, best.fur_color_index)
+	return EmployeeAward.new("Jack of All Trades", best, "%d roles held" % best_count)
 
 
 static func _most_station_jobs(cats: Array[Cat], role: Cat.Role) -> EmployeeAward:
@@ -180,8 +216,7 @@ static func _most_station_jobs(cats: Array[Cat], role: Cat.Role) -> EmployeeAwar
 			best_count = count
 	if best == null or best_count < _MIN_STATION_BATCHES_FOR_AWARD:
 		return null
-	return EmployeeAward.new("Most %s Jobs" % _role_label(role), best.cat_name, "%d batches" % best_count,
-			best.breed_index, best.fur_color_index)
+	return EmployeeAward.new("Most %s Jobs" % _role_label(role), best, "%d batches" % best_count)
 
 
 static func _role_label(role: Cat.Role) -> String:

@@ -6,7 +6,12 @@ render_mode unshaded, blend_mix;
 // one shared material works for every Sprite3D regardless of its own
 // native resolution. Godot's own per-fragment UV already accounts for
 // hframes sub-framing (a Cat's walk-cycle frame), so no manual frame
-// math is needed here.
+// math is needed here — but note what that implies for the offsets
+// below: UV is a coordinate into the WHOLE sheet, so outline_width_uv_*
+// has to be expressed against the whole texture's size too, not one
+// frame's. See HoverHighlight._apply_to(); getting that wrong scaled
+// the horizontal ring by exactly hframes and nothing else, which is
+// invisible on every single-frame sprite in the game.
 // repeat_disable (clamp-to-edge) is load-bearing, not cosmetic: the
 // neighbor samples below deliberately step outside [0,1] UV near a
 // sprite's own edge, and a sprite's quad is sized to its full texture
@@ -17,11 +22,11 @@ render_mode unshaded, blend_mix;
 // and draw a spurious "outline" fragment far from any real edge.
 uniform sampler2D outline_texture : source_color, filter_nearest, repeat_disable;
 uniform vec4 outline_color : source_color = vec4(1.0, 0.95, 0.4, 1.0);
-// Separate X/Y sample offsets, not one shared value — a sprite frame's
-// pixel width and height are rarely equal (a 92x23 Milk Source vs. a
-// 89x123 Mixer), so a single UV delta derived from the frame's width
-// alone under- or over-shoots the other axis by however much its aspect
-// ratio differs from square. See HoverHighlight._apply_to().
+// Separate X/Y sample offsets, not one shared value — a sprite's pixel
+// width and height are rarely equal (a 92x23 Milk Source vs. a 89x123
+// Mixer), so a single UV delta derived from one axis under- or
+// over-shoots the other by however much the aspect differs from square.
+// Both are in whole-texture UV. See HoverHighlight._apply_to().
 uniform float outline_width_uv_x = 0.01;
 uniform float outline_width_uv_y = 0.01;
 

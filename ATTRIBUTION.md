@@ -10,7 +10,7 @@ Chai
 Newby
 Saber
 
-## Collaborators
+## Acknowledgments
 
 ### Godot Game Template
 ![Maaack Plugin Icon](/assets/plugin_logo/logo.png)  
