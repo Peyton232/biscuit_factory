@@ -39,6 +39,14 @@ extends Building
 ## is_output_stalled().
 signal output_status_changed()
 
+## Emitted when a batch starts or finishes. **Needed because the
+## inventory signals cannot carry this**: `_try_start()` removes the
+## inputs (each emitting `changed`) and only *then* sets `_processing`,
+## so anything refreshing off `input_inventory.changed` still sees the
+## station as idle. BuildingItemDisplay listens so it can fade the
+## output item in as the batch progresses.
+signal batch_state_changed(running: bool)
+
 ## Which Cat role can staff this building. Set per scene (Mixer ->
 ## MIXER, Oven -> OVEN); a Cat claims station_cat by matching this.
 @export var required_role: Cat.Role = Cat.Role.MIXER
@@ -107,12 +115,30 @@ var _output_stranded: bool = false
 var _output_stalled: bool = false
 
 
+## **Built as typed locals rather than returned from a ternary.** Godot
+## does not apply a function's declared `Array[StringName]` return type
+## to a ternary expression, so `return [x] if c else []` really returns
+## an *untyped* Array at runtime. Every caller that merely iterates the
+## result is unaffected, which is why this sat here unnoticed; the first
+## caller to assign it to a typed variable (BuildingItemDisplay's
+## batch-preview lookup) hit "Trying to assign an array of type Array to
+## a variable of type Array[StringName]" and silently got an empty list.
 func current_inputs() -> Array[StringName]:
-	return recipe.inputs if recipe != null else []
+	# Returns the Recipe's own (already typed) array rather than a copy —
+	# DeliveryManager._dispatch() calls this for every building on every
+	# inventory change, so allocating a fresh array per call would be a
+	# real cost in a hot path. Callers only read it.
+	if recipe == null:
+		var none: Array[StringName] = []
+		return none
+	return recipe.inputs
 
 
 func current_outputs() -> Array[StringName]:
-	return [recipe.output] if recipe != null else []
+	var outputs: Array[StringName] = []
+	if recipe != null:
+		outputs.append(recipe.output)
+	return outputs
 
 
 ## Switches which recipe this station runs. Any batch already in
@@ -140,7 +166,7 @@ func assign_recipe(new_recipe: Recipe) -> void:
 	if new_recipe == recipe:
 		return
 	recipe = new_recipe
-	_processing = false
+	_set_processing(false)
 	_timer = 0.0
 	input_inventory.clear()
 	output_inventory.clear()
@@ -239,6 +265,15 @@ func is_output_stranded() -> bool:
 
 
 ## Output occupied by a finished batch, so the next one cannot start.
+## The only place `_processing` is written, so `batch_state_changed`
+## cannot be forgotten at a call site.
+func _set_processing(running: bool) -> void:
+	if _processing == running:
+		return
+	_processing = running
+	batch_state_changed.emit(running)
+
+
 func _is_output_blocked() -> bool:
 	if recipe == null or _processing:
 		return false
@@ -321,14 +356,14 @@ func _try_start() -> void:
 			return
 	for item: StringName in recipe.inputs:
 		input_inventory.remove(item)
-	_processing = true
+	_set_processing(true)
 	_timer = 0.0
 
 
 func _try_finish() -> void:
 	var produced: StringName = recipe.output
 	if output_inventory.add(produced):
-		_processing = false
+		_set_processing(false)
 		station_cat.record_batch_completed(required_role)
 		FloatingText.spawn(self, global_position + Vector3.UP * 2.1, "+%s" % produced)
 

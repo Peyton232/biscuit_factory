@@ -57,14 +57,53 @@ signal held_changed(cat: Cat)
 ## now much-lower-hanging feet visibly above the ground (~0.2m
 ## clearance).
 @export var held_height: float = 1.5
+## How long the button must stay down on a cat before the click becomes a
+## pick-up instead of a selection — "one click on cat open menu, but
+## click and hold on a cat will pick them up".
+##
+## Short enough that holding to carry feels immediate, long enough that
+## an ordinary click never grabs by accident. A selection is only
+## committed on *release* below this threshold, so the two gestures can
+## share the same button without either stealing from the other.
+@export_range(0.05, 1.0, 0.01) var hold_to_pick_up_seconds: float = 0.18
 
 var _selected: Cat = null
 var _held: Cat = null
+## The cat the button went down on, while we wait to see whether this
+## turns into a click (select) or a hold (pick up). Null when the press
+## didn't land on a cat.
+var _press_candidate: Cat = null
+var _press_seconds: float = 0.0
+## True when the current carry began as a press-and-hold, which means
+## releasing the button puts the cat down. A carry started from the
+## inspector's "Pick Up" button instead stays stuck to the cursor until
+## the next click — the button is released immediately by its very
+## nature, so drag-to-release semantics would drop the cat instantly.
+var _drag_pickup: bool = false
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if _held != null and grid_cursor.has_hover:
 		_held.position = _held_target_position()
+	if _press_candidate == null or _held != null:
+		return
+	_press_seconds += delta
+	if _press_seconds >= hold_to_pick_up_seconds:
+		_begin_drag_pickup()
+
+
+## Promotes a still-held press into a carry. The candidate is cleared so
+## the matching release is treated as "put the cat down", not "select".
+func _begin_drag_pickup() -> void:
+	var cat: Cat = _press_candidate
+	_press_candidate = null
+	_press_seconds = 0.0
+	if _selected != null:
+		_deselect()
+	_held = cat
+	_drag_pickup = true
+	_held.begin_held()
+	held_changed.emit(_held)
 
 
 ## Where a held cat's grab point (node origin) belongs, given the current
@@ -102,29 +141,49 @@ func _held_target_position() -> Vector3:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("place_building"):
-		_on_click()
+		_on_press()
+	elif event.is_action_released("place_building"):
+		_on_release()
 	elif event.is_action_pressed("cancel_placement"):
 		_on_cancel()
 
 
-func _on_click() -> void:
+## Button down. A press on a cat commits to nothing yet — whether it
+## becomes a selection or a pick-up is decided by how long it stays down
+## (see _process()/_on_release()).
+func _on_press() -> void:
 	if _held != null:
-		_drop_held_cat()
-		get_viewport().set_input_as_handled()
+		# Carrying from the inspector button: a click puts the cat down.
+		# A drag carry ignores this and drops on release instead.
+		if not _drag_pickup:
+			_drop_held_cat()
+			get_viewport().set_input_as_handled()
 		return
 	if placer.selected_definition() != null or placer.is_demolish_mode():
 		return
-	# Deliberately NOT gated on grid_cursor.has_hover the way it used to
-	# be: that asks "is the ground under the mouse inside the factory",
-	# which a click on a cat's head can fail (its ground point is a metre
-	# behind it, possibly past the bounds) even though the cat itself is
-	# plainly under the cursor. Deselecting on empty ground still is.
-	var clicked: Cat = _cat_under_mouse()
-	if clicked != null:
-		_select(clicked)
+	var pressed: Cat = _cat_under_mouse()
+	if pressed != null:
+		_press_candidate = pressed
+		_press_seconds = 0.0
 		get_viewport().set_input_as_handled()
 	elif _selected != null and grid_cursor.has_hover:
 		_deselect()
+
+
+## Button up. Short press on a cat = select it (open the menu); release
+## while drag-carrying = put the cat down.
+func _on_release() -> void:
+	if _held != null and _drag_pickup:
+		_drop_held_cat()
+		get_viewport().set_input_as_handled()
+		return
+	if _press_candidate == null:
+		return
+	var cat: Cat = _press_candidate
+	_press_candidate = null
+	_press_seconds = 0.0
+	_select(cat)
+	get_viewport().set_input_as_handled()
 
 
 func _on_cancel() -> void:
@@ -134,11 +193,13 @@ func _on_cancel() -> void:
 		# normalizes the Y back to ground level.
 		_held.end_held(_held.position)
 		_held = null
+		_drag_pickup = false
 		held_changed.emit(null)
 		get_viewport().set_input_as_handled()
 	elif _selected != null:
 		_deselect()
 		get_viewport().set_input_as_handled()
+	_press_candidate = null
 
 
 ## Whether a cat is currently being carried — FactoryHud reads this to
@@ -170,17 +231,21 @@ func _deselect() -> void:
 func _drop_held_cat() -> void:
 	# If the cursor isn't over the grid, keep holding rather than
 	# stranding the cat in HELD state with nothing left tracking it.
+	# A drag carry that reaches here off-grid becomes a sticky carry, so
+	# the player still has a way to put the cat down.
 	if not grid_cursor.has_hover:
+		_drag_pickup = false
 		return
 	_held.end_held(grid_cursor.world_point)
 	_held = null
+	_drag_pickup = false
 	held_changed.emit(null)
 
 
 ## The cat a click would select right now, or null — same targeting
-## logic _on_click() uses, exposed read-only for HoverHighlight so
+## logic _on_press() uses, exposed read-only for HoverHighlight so
 ## hovering previews exactly what clicking would do. Deliberately mirrors
-## _on_click()'s own placer/held gating (no hover target while actively
+## _on_press()'s own placer/held gating (no hover target while actively
 ## placing a building, demolishing, or already holding a cat).
 func hovered_cat() -> Cat:
 	if _held != null or placer.selected_definition() != null or placer.is_demolish_mode():

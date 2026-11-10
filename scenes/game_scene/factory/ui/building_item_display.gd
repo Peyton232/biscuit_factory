@@ -183,6 +183,9 @@ var _output_icon: Sprite3D = null
 ## a large factory has well over a hundred of these nodes and most of
 ## them are empty most of the time.
 var _hover_time: float = 0.0
+## True while `_output_icon` is showing the item a batch is *about* to
+## produce rather than one that exists — see _layout().
+var _output_is_preview: bool = false
 ## Per-building phase so neighbouring stations don't hover in lockstep.
 ## Derived from the building's grid cell rather than randf(), so it is
 ## stable across a save/load round-trip and identical for anyone
@@ -207,6 +210,9 @@ func _ready() -> void:
 	set_process(false)
 	building.input_inventory.changed.connect(_refresh)
 	building.output_inventory.changed.connect(_refresh)
+	var station: ProcessingBuilding = building as ProcessingBuilding
+	if station != null:
+		station.batch_state_changed.connect(func(_running: bool) -> void: _refresh())
 	_refresh()
 
 
@@ -242,14 +248,28 @@ func _current_output_items() -> Array[StringName]:
 ## 21 both overlapped the wide items and left gaping holes between the
 ## narrow ones.
 func _layout(inputs: Array[StringName], outputs: Array[StringName]) -> void:
-	var has_output: bool = not outputs.is_empty()
+	# Nothing finished yet, but a batch is underway: show what it is going
+	# to produce, faded in by how far along it is. It occupies the exact
+	# slot and size the real item will, so the moment the batch completes
+	# the preview is simply replaced in place with nothing moving.
+	var shown_outputs: Array[StringName] = outputs
+	_output_is_preview = false
+	if shown_outputs.is_empty():
+		var upcoming: StringName = _batch_output()
+		if upcoming != &"":
+			# Built as a typed array, not cast from a literal — GDScript
+			# will not convert `[x] as Array[StringName]` and throws at
+			# runtime rather than at parse time.
+			shown_outputs = Array([upcoming], TYPE_STRING_NAME, &"", null)
+			_output_is_preview = true
+	var has_output: bool = not shown_outputs.is_empty()
 	# Sharing one surface is the common case: inputs from the left, the
 	# output flush to the right of the same span.
 	var shares_surface: bool = has_output and not output_has_own_surface
 
 	var row: Array[StringName] = inputs.duplicate()
 	if shares_surface:
-		row.append(outputs[0])
+		row.append(shown_outputs[0])
 	var fit: float = _fit_scale(row, surface_right_px - surface_left_px,
 			maxi(0, row.size() - 1))
 
@@ -277,16 +297,35 @@ func _layout(inputs: Array[StringName], outputs: Array[StringName]) -> void:
 	var out_height: float = output_surface_height_px if output_surface_height_px >= 0.0 \
 			else surface_height_px
 	if shares_surface:
-		_set_icon_texture(_output_icon, outputs[0], fit)
-		var shared_w: float = _width_px(outputs[0], fit)
+		_set_icon_texture(_output_icon, shown_outputs[0], fit)
+		var shared_w: float = _width_px(shown_outputs[0], fit)
 		_place(_output_icon, surface_right_px - shared_w * 0.5, out_height)
 	else:
 		var own_span: float = output_surface_right_px - output_surface_left_px
-		var out_fit: float = _fit_scale(outputs, own_span, 0)
-		_set_icon_texture(_output_icon, outputs[0], out_fit)
+		var out_fit: float = _fit_scale(shown_outputs, own_span, 0)
+		_set_icon_texture(_output_icon, shown_outputs[0], out_fit)
 		_place(_output_icon, (output_surface_left_px + output_surface_right_px) * 0.5,
 				out_height)
+	_output_icon.modulate.a = _preview_alpha() if _output_is_preview else 1.0
 	_update_hover_processing()
+
+
+## The item the batch currently running will produce, or &"" when this
+## building isn't a station or isn't mid-batch.
+func _batch_output() -> StringName:
+	var station: ProcessingBuilding = building as ProcessingBuilding
+	if station == null or not station.is_batch_running():
+		return &""
+	var outputs: Array[StringName] = station.current_outputs()
+	return outputs[0] if not outputs.is_empty() else &""
+
+
+## Opacity tracks the progress bar exactly, so the item materialises at
+## the same rate the bar fills — invisible as the batch starts, solid as
+## it completes.
+func _preview_alpha() -> float:
+	var station: ProcessingBuilding = building as ProcessingBuilding
+	return station.progress() if station != null else 1.0
 
 
 ## Gentle vertical hover, the "like items in minecraft" flourish — items
@@ -306,6 +345,8 @@ func _process(delta: float) -> void:
 		index += 1
 	if _output_icon != null and _output_icon.visible:
 		_apply_hover(_output_icon, index)
+		if _output_is_preview:
+			_output_icon.modulate.a = _preview_alpha()
 
 
 ## A stable hover phase for a grid cell.
@@ -329,8 +370,10 @@ static func _phase_for_cell(cell: Vector2i) -> float:
 	return float(index) * (TAU / float(_HOVER_PHASE_BUCKETS))
 
 
+## Also true while a preview is fading in, since its opacity has to be
+## driven every frame even if the hover itself is switched off.
 func _update_hover_processing() -> void:
-	set_process(hover_height_px > 0.0 and _has_visible_icons())
+	set_process(_has_visible_icons() and (hover_height_px > 0.0 or _output_is_preview))
 
 
 func _apply_hover(icon: Sprite3D, index: int) -> void:

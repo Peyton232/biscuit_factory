@@ -7,6 +7,19 @@ extends Node3D
 ## Call setup() before adding to the tree. Visuals live on child nodes
 ## (placeholder sprites now, final pixel art later) — never in this class.
 
+## Emitted when the cursor starts or stops hovering this building.
+##
+## **Set by HoverHighlight, which is already the single authority on what
+## is under the cursor** — it resolves cat-beats-building priority in one
+## place, and its own class doc warns against anyone making "a third copy
+## of what's under the cursor". So the hover state is pushed from there
+## rather than each building polling a selector it would otherwise have
+## to be handed a reference to.
+signal hover_changed(hovered: bool)
+
+## Whether the cursor is currently over this building. See hover_changed.
+var hovered: bool = false
+
 var grid_manager: GridManager
 var definition: BuildingDefinition
 ## Anchor cell: the footprint's lowest x/y corner.
@@ -25,6 +38,15 @@ func setup(manager: GridManager, anchor_cell: Vector2i, building_definition: Bui
 	position = manager.region_to_world(anchor_cell, building_definition.size)
 	input_inventory = Inventory.new(building_definition.input_capacity)
 	output_inventory = Inventory.new(building_definition.output_capacity)
+
+
+## Called by HoverHighlight on the transition only, so this costs nothing
+## for the hundred-odd buildings that are not under the cursor.
+func set_hovered(value: bool) -> void:
+	if hovered == value:
+		return
+	hovered = value
+	hover_changed.emit(value)
 
 
 func accepts_item(item: StringName) -> bool:

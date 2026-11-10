@@ -42,6 +42,28 @@ extends Label3D
 
 @export var building: Building
 
+## Seconds to fade up once hovered. Short: the reveal should feel like a
+## response to the cursor, not an animation to sit through.
+@export_range(0.0, 1.0, 0.01) var reveal_seconds: float = 0.12
+## How long the text lingers after the cursor leaves, before it starts to
+## go. Covers the common case of brushing past a building on the way to
+## another one without the text snapping away.
+@export_range(0.0, 3.0, 0.05) var hold_seconds: float = 0.6
+## Seconds to fade back out. Deliberately much slower than the reveal —
+## "appear when hovered over and then slow fade".
+@export_range(0.0, 4.0, 0.05) var fade_seconds: float = 0.9
+## Warning lines ("⚠ No recipe", "⚠ no location found", "⚠ waiting on
+## pickup") stay visible without hovering.
+##
+## **On by default, and it is not a contradiction of the hover rule.**
+## The clutter being solved here is the *routine* chatter — every station
+## narrating its inputs at all times. Warnings are rare, mean something
+## is actually wrong, and are the one case where needing to hover a
+## building to discover the problem would hide it: a stalled station the
+## player never happens to point at stays silently stalled. Set false for
+## strict hover-only behaviour.
+@export var always_show_warnings: bool = true
+
 const _OK_COLOR := Color(0.35, 0.85, 0.35)
 const _MISSING_COLOR := Color(0.95, 0.35, 0.3)
 const _OUTPUT_COLOR := Color.WHITE
@@ -51,6 +73,16 @@ const _OUTPUT_COLOR := Color.WHITE
 ## is, same role `_base_y` used to play for `position.y`.
 var _base_offset_y: float = 0.0
 var _extra_lines: Array[Label3D] = []
+## Each visible line's colour at full opacity. The live `modulate` is
+## this with the current alpha multiplied in, so a refresh mid-fade
+## cannot snap the text back to solid.
+var _line_colors: Array[Color] = []
+var _alpha: float = 0.0
+var _target_alpha: float = 0.0
+## Counts down after the cursor leaves, before the fade starts.
+var _hold_remaining: float = 0.0
+## True while the current line set contains a ⚠ line.
+var _has_warning: bool = false
 
 
 func _ready() -> void:
@@ -58,6 +90,7 @@ func _ready() -> void:
 	position = Vector3(0, 0.05, 0)
 	building.input_inventory.changed.connect(_refresh)
 	building.output_inventory.changed.connect(_refresh)
+	building.hover_changed.connect(_on_hover_changed)
 	# A station going stranded changes no inventory — it is a timer
 	# elapsing on inventory that has stopped moving — so it needs its own
 	# repaint trigger. See ProcessingBuilding.is_output_stranded().
@@ -65,32 +98,113 @@ func _ready() -> void:
 	if processing != null:
 		processing.output_status_changed.connect(_refresh)
 	_refresh()
+	# Start hidden: nothing is hovered at load. A warning present from the
+	# first frame still shows, via _forced_visible().
+	_alpha = 1.0 if _forced_visible() else 0.0
+	_target_alpha = _alpha
+	_apply_alpha()
+	set_process(false)
 
 
+func _on_hover_changed(is_hovered: bool) -> void:
+	if is_hovered:
+		_hold_remaining = 0.0
+		_target_alpha = 1.0
+	else:
+		_hold_remaining = hold_seconds
+		_target_alpha = 1.0 if _forced_visible() else 0.0
+	set_process(true)
+
+
+## A warning overrides the hover rule — see always_show_warnings.
+func _forced_visible() -> bool:
+	return always_show_warnings and _has_warning
+
+
+func _process(delta: float) -> void:
+	if _hold_remaining > 0.0:
+		_hold_remaining = maxf(0.0, _hold_remaining - delta)
+		return
+	if is_equal_approx(_alpha, _target_alpha):
+		_alpha = _target_alpha
+		_apply_alpha()
+		set_process(false)
+		return
+	# Up fast, down slow; a zero duration means snap.
+	var rising: bool = _target_alpha > _alpha
+	var duration: float = reveal_seconds if rising else fade_seconds
+	if duration <= 0.0:
+		_alpha = _target_alpha
+	else:
+		_alpha = move_toward(_alpha, _target_alpha, delta / duration)
+	_apply_alpha()
+
+
+## Applies `_alpha` to every visible line, fading the outline with the
+## fill. **Label3D keeps a separate `outline_modulate`** — fading only
+## `modulate` would leave each glyph as a solid black outline around
+## vanishing text, which reads as a rendering bug rather than a fade.
+func _apply_alpha() -> void:
+	for i: int in _line_colors.size():
+		var line: Label3D = self if i == 0 else _extra_lines[i - 1]
+		var c: Color = _line_colors[i]
+		line.modulate = Color(c.r, c.g, c.b, c.a * _alpha)
+		var o: Color = line.outline_modulate
+		line.outline_modulate = Color(o.r, o.g, o.b, _alpha)
+
+
+## Rebuilds the text. **Never writes `modulate` directly** — it records
+## each line's full-opacity colour and hands off to _apply_alpha(), so an
+## inventory change arriving mid-fade cannot snap the text back to solid.
 func _refresh() -> void:
 	var lines: Array[Dictionary] = _build_lines()
+	_line_colors.clear()
+	var was_warning: bool = _has_warning
+	_has_warning = false
+	for line_data: Dictionary in lines:
+		if String(line_data["text"]).begins_with("⚠"):
+			_has_warning = true
+			break
+
 	if lines.is_empty():
 		text = ""
 		offset.y = _base_offset_y
 		for extra: Label3D in _extra_lines:
 			extra.hide()
+		_retarget(was_warning)
 		return
 
 	var line_height_px: float = font_size * 1.2
 	var top_offset_px: float = line_height_px * (lines.size() - 1) * 0.5
 
 	text = lines[0]["text"]
-	modulate = lines[0]["color"]
+	_line_colors.append(lines[0]["color"])
 	offset.y = _base_offset_y + top_offset_px
 
 	for i: int in range(1, lines.size()):
 		var line: Label3D = _line_at(i - 1)
 		line.text = lines[i]["text"]
-		line.modulate = lines[i]["color"]
 		line.offset.y = _base_offset_y + top_offset_px - line_height_px * i
 		line.show()
+		_line_colors.append(lines[i]["color"])
 	for i: int in range(lines.size() - 1, _extra_lines.size()):
 		_extra_lines[i].hide()
+
+	_apply_alpha()
+	_retarget(was_warning)
+
+
+## A warning appearing (or clearing) changes whether this label should be
+## visible without the cursor, so re-aim the fade — but only on the
+## transition, so routine inventory churn doesn't keep waking _process().
+func _retarget(was_warning: bool) -> void:
+	if _has_warning == was_warning:
+		return
+	if building.hovered:
+		return
+	_target_alpha = 1.0 if _forced_visible() else 0.0
+	_hold_remaining = 0.0
+	set_process(true)
 
 
 func _build_lines() -> Array[Dictionary]:

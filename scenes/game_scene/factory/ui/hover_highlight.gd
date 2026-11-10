@@ -6,7 +6,7 @@ extends Node
 ## click." Priority matches CatSelector/BuildingSelector's own click
 ## priority exactly (a cat wins over the building underneath it, e.g. a
 ## stationed cat): reuses `CatSelector.hovered_cat()` (same targeting
-## logic and placer/held gating `_on_click()` itself uses) before falling
+## logic and placer/held gating `_on_press()` itself uses) before falling
 ## back to `BuildingSelector.hovered_building()` (likewise the exact
 ## targeting its own click handler uses) — not a third copy of "what's
 ## under the cursor." Both are screen-space sprite tests as of
@@ -57,6 +57,11 @@ const _OUTLINE_COLOR: Color = Color(1.0, 0.95, 0.4)
 
 var _material: ShaderMaterial
 var _current: Sprite3D = null
+## The Building currently under the cursor, tracked separately from
+## `_current` because the outline target may be a *cat* standing on that
+## building — and a hovered cat means the building underneath is not what
+## the player is pointing at. See Building.hover_changed.
+var _current_building: Building = null
 
 
 func _ready() -> void:
@@ -67,6 +72,7 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	var target: Sprite3D = null
 	var color: Color = _OUTLINE_COLOR
+	var building_under: Building = null
 	if placer.selected_definition() == null and not placer.is_demolish_mode():
 		var cat: Cat = cat_selector.hovered_cat()
 		if cat != null:
@@ -75,10 +81,12 @@ func _process(_delta: float) -> void:
 		else:
 			var building: Building = building_selector.hovered_building()
 			if building != null:
+				building_under = building
 				target = building.get_node_or_null("Visual") as Sprite3D
 				var processing: ProcessingBuilding = building as ProcessingBuilding
 				if processing != null:
 					color = RoleColors.color_for(processing.required_role)
+	_set_hovered_building(building_under)
 	if target == _current:
 		return
 	if _current != null:
@@ -86,6 +94,21 @@ func _process(_delta: float) -> void:
 	_current = target
 	if _current != null:
 		_apply_to(_current, color)
+
+
+## Pushes hover state onto the Building itself so anything that wants to
+## react (BuildingInventoryLabel reveals its text) can listen to one
+## signal instead of re-deriving "what is under the cursor" — the
+## duplication this class's own doc warns about. Fires only on the
+## transition, and tolerates the building being demolished while hovered.
+func _set_hovered_building(building: Building) -> void:
+	if building == _current_building:
+		return
+	if _current_building != null and is_instance_valid(_current_building):
+		_current_building.set_hovered(false)
+	_current_building = building
+	if _current_building != null:
+		_current_building.set_hovered(true)
 
 
 ## Ring color per entity (✅ fixed — "color code the stations and outline

@@ -105,9 +105,33 @@ const _STANDING_HEIGHT_METERS: float = 0.00054 * 3000.0
 ## clear this larger pull *and* leave the now much-lower-hanging feet
 ## clear of the ground — see its own doc comment).
 const _HELD_VISUAL_Y: float = -0.8 * _STANDING_HEIGHT_METERS
-## Gentle pendulum sway while held, selling the "dangling" read further.
-const _HELD_SWAY_DEGREES: float = 6.0
+## Gentle idle pendulum while held and stationary, so a carried cat is
+## never completely dead on screen. Small, because the real motion now
+## comes from the swing below.
+const _HELD_SWAY_DEGREES: float = 2.5
 const _HELD_SWAY_SPEED: float = 1.3
+
+## How far the cat swings per metre/second of horizontal carry speed, in
+## degrees. The swing is a *lag*: a cat dragged right trails to the left,
+## which is why the target angle is negated against the motion.
+@export_range(0.0, 12.0, 0.1) var held_swing_degrees_per_speed: float = 3.2
+## Ceiling on the swing so a fast flick can't spin the cat past a legible
+## angle.
+@export_range(0.0, 80.0, 1.0) var held_swing_max_degrees: float = 26.0
+## Natural frequency of the swing, in radians/second — how fast the cat
+## catches up to the angle its carry speed wants. A full swing takes
+## 2*PI/this seconds, so 13 is roughly a half-second pendulum.
+##
+## **Expressed as a frequency, not a raw spring constant.** The first
+## attempt used `velocity += (target - angle) * stiffness * delta` with
+## stiffness 14, which is a natural frequency of sqrt(14) = 3.7 rad/s —
+## a 1.7 second period. Measured, that reached under 10% of its target
+## during a quarter-second drag, i.e. no visible swing at all. Frequency
+## is the parameter that actually describes the feel.
+@export_range(2.0, 40.0, 0.5) var held_swing_frequency: float = 13.0
+## Damping ratio. Below 1 the swing overshoots and settles — which is the
+## weight-on-a-string read. 1.0 would glide in with no bounce at all.
+@export_range(0.05, 1.5, 0.05) var held_swing_damping: float = 0.30
 
 ## CarriedItem's designed pixel_size (cat.tscn) before any per-item
 ## correction from ItemVisuals.scale_for() — the same Sprite3D is reused
@@ -193,6 +217,28 @@ var _station_bounce_timer: float = 0.0
 ## nothing to do. See nap_delay/_update_idle_nap().
 var _idle_still_seconds: float = 0.0
 var _held_sway_timer: float = 0.0
+## Live swing state, in radians. Driven by a damped spring against the
+## cat's own horizontal carry speed — see _update_held_visual().
+var _held_swing_angle: float = 0.0
+var _held_swing_velocity: float = 0.0
+## Previous frame's world X while held, for deriving carry speed. NAN
+## marks "no previous frame yet", so the first frame of a pickup can't
+## register a spurious jump from wherever the cat was standing.
+var _held_last_x: float = NAN
+## Captured in _ready() so the held pose can be undone exactly, whatever
+## the art is later changed to.
+var _standing_offset_px: float = 0.0
+## Sprite offset (in texture pixels) that hangs the body below the grab
+## point while held, so the pendulum pivots on the cursor rather than on
+## the cat's feet. Derived from _HELD_VISUAL_Y, which previously achieved
+## the same on-screen placement by moving the *node* down instead — same
+## result, but the node had to stay at the pivot for rotation to work.
+var _held_hang_offset_px: float = 0.0
+## The collar rides on Visual, so moving Visual's node to the grab point
+## would carry the collar up off the cat's neck with it. These hold the
+## collar's offset for each pose; see _apply_held_pose().
+var _collar_standing_offset: Vector2 = Vector2.ZERO
+var _collar_held_offset: Vector2 = Vector2.ZERO
 ## World position the cat last had actual work finish at; wander targets
 ## are picked near this, not near wherever the previous wander leg ended,
 ## so repeated wandering can't cumulatively drift the cat far away.
@@ -330,6 +376,8 @@ var _pet_timer: float = 0.0
 
 
 func _ready() -> void:
+	_standing_offset_px = _visual.offset.y
+	_held_hang_offset_px = _HELD_VISUAL_Y / _visual.pixel_size + _standing_offset_px
 	_update_name_label()
 	_setup_collar()
 	_idle_anchor = position
@@ -441,14 +489,88 @@ func _update_idle_nap(delta: float) -> void:
 ## _visual.position.y to rest whenever not STATIONED). Resets both back
 ## to neutral the instant HELD ends, same "offset while active, snap back
 ## when not" idiom _shake()/_update_station_bounce() already use.
+## While HELD, hangs the cat from the cursor and swings it against the
+## drag.
+##
+## **The swing is applied by replacing the sprite's basis, not by setting
+## `rotation` — a billboarded Sprite3D discards node rotation.** Billboard
+## mode rebuilds the basis to face the camera every frame, so
+## `_visual.rotation.z` renders nothing at all; the original constant
+## pendulum here was written that way and was silently invisible for its
+## whole life. (`_shake()`, the UPSET wiggle that does visibly work, uses
+## `position.x` for exactly this reason.) So while held the billboard is
+## switched off and the basis is set to the camera's own, rolled about the
+## camera's forward axis — which is what a billboard does, plus the roll
+## it has no parameter for. The camera never yaws in this game, so there
+## is no case where this disagrees with real billboarding.
+##
+## **The pivot has to be the grab point**, or the cat swings about its
+## feet like an inverted pendulum. Standing, the sprite sits *above* its
+## node (`offset.y` = +1500px) and the node is on the ground; held, the
+## node is moved to the cursor and the sprite hung *below* it
+## (`_held_hang_offset_px`, -900px). Both arrangements put the art in the
+## same place on screen — but only the second rotates correctly.
 func _update_held_visual(delta: float) -> void:
 	if _state != State.HELD:
+		if _visual.billboard != BaseMaterial3D.BILLBOARD_ENABLED \
+				or not is_equal_approx(_visual.offset.y, _standing_offset_px):
+			# Undo the held pose. Nothing else restores these, so a
+			# dropped cat would stay hanging and tilted.
+			_visual.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+			_visual.offset.y = _standing_offset_px
+			_visual.rotation = Vector3.ZERO
+			_collar.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+			_collar.offset = _collar_standing_offset
 		_held_sway_timer = 0.0
-		_visual.rotation.z = 0.0
+		_held_swing_angle = 0.0
+		_held_swing_velocity = 0.0
+		_held_last_x = NAN
 		return
+
 	_held_sway_timer += delta
-	_visual.position.y = _HELD_VISUAL_Y
-	_visual.rotation.z = deg_to_rad(sin(_held_sway_timer * _HELD_SWAY_SPEED) * _HELD_SWAY_DEGREES)
+
+	# Horizontal carry speed, in metres/second. The camera never yaws, so
+	# world X maps consistently to screen left/right — the same assumption
+	# station_offset and the collar already rely on.
+	var carry_speed: float = 0.0
+	if not is_nan(_held_last_x) and delta > 0.0:
+		carry_speed = (position.x - _held_last_x) / delta
+	_held_last_x = position.x
+
+	# The cat hangs from the cursor, so it lags the motion: drag right and
+	# the body trails left. Hence the negation.
+	var target: float = deg_to_rad(clampf(
+			-carry_speed * held_swing_degrees_per_speed,
+			-held_swing_max_degrees, held_swing_max_degrees))
+	# Standard damped harmonic oscillator: w^2 * displacement pulls toward
+	# the target, 2*zeta*w * velocity bleeds the energy back out.
+	var w: float = held_swing_frequency
+	var accel: float = w * w * (target - _held_swing_angle) \
+			- 2.0 * held_swing_damping * w * _held_swing_velocity
+	_held_swing_velocity += accel * delta
+	_held_swing_angle += _held_swing_velocity * delta
+	_held_swing_angle = clampf(_held_swing_angle,
+			deg_to_rad(-held_swing_max_degrees), deg_to_rad(held_swing_max_degrees))
+
+	var idle: float = deg_to_rad(sin(_held_sway_timer * _HELD_SWAY_SPEED) * _HELD_SWAY_DEGREES)
+	var angle: float = _held_swing_angle + idle
+
+	# Hang from the grab point so the pivot is the cursor. Done before the
+	# camera check so a missing camera degrades to "correctly placed but
+	# not swinging" rather than leaving the collar off the neck.
+	_visual.position.y = 0.0
+	_visual.offset.y = _held_hang_offset_px
+	_collar.offset = _collar_held_offset
+	var camera: Camera3D = get_viewport().get_camera_3d()
+	if camera == null:
+		return
+	_visual.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+	# The collar must stop billboarding too, or it stays stubbornly
+	# axis-aligned while the body it is painted on tilts underneath it.
+	# Being a child of Visual, it then inherits the swing for free.
+	_collar.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+	var cam_basis: Basis = camera.global_transform.basis
+	_visual.global_transform.basis = cam_basis.rotated(cam_basis.z.normalized(), angle)
 
 
 ## Tints the sprite to one of FUR_COLORS. Index is clamped/wrapped so
@@ -545,6 +667,12 @@ func _setup_collar() -> void:
 	# shares Visual's origin, and Visual's quad starts at that origin, so
 	# collar_height is measured straight up from it.
 	_collar.offset = Vector2(collar_offset_x, collar_height) / _collar.pixel_size
+	_collar_standing_offset = _collar.offset
+	# Held, Visual's node sits at the grab point instead of the cat's
+	# feet, so the collar has to come down by the same amount the body
+	# does to stay on the neck.
+	_collar_held_offset = Vector2(collar_offset_x, collar_height + _HELD_VISUAL_Y) \
+			/ _collar.pixel_size
 	_update_collar()
 
 
